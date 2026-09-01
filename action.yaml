@@ -10,9 +10,7 @@
 
 name: Sync Header Metadata
 description: >-
-    Checks and updates the "~owner/repo.git" and "::: :/<path>" header
-    lines in tracked files to match the repository and path each file
-    actually has.
+    Checks and updates the "~owner/repo.git" and "::: :/<path>" header lines in tracked files
 branding:
     icon:  edit-3
     color: black
