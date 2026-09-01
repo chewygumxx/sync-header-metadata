@@ -10,7 +10,7 @@
 
 name: Sync Header Metadata
 description: >-
-    Checks and updates the "~owner/repo.git" and "::: :/<path>" header lines in tracked files
+    Checks and updates the "~owner/repo.git" and "::: :/<path>" header lines in tracked files.
 branding:
     icon:  edit-3
     color: black
@@ -26,22 +26,7 @@ inputs:
         description: Enable INFO-level logging.
         required:    false
         default:    'false'
-    ignore_config:
-        description: Ignore configuration filepath
-        required:    false
-        default:     .github/header_ignore.yaml
 
 runs:
-    using: composite
-    steps:
-        - name: Install dependencies
-          shell: bash
-          run:   npm ci --omit=dev --prefix "$GITHUB_ACTION_PATH"
-
-        - name: Run
-          shell: bash
-          run:   node "$GITHUB_ACTION_PATH/run.js"
-          env:
-              INPUT_MODE:          ${{ inputs.mode          }}
-              INPUT_VERBOSE:       ${{ inputs.verbose       }}
-              INPUT_IGNORE_CONFIG: ${{ inputs.ignore_config }}
+    using: node20
+    main:  run.js
