@@ -1,0 +1,22 @@
+{
+    "name": "sync-header-metadata",
+    "description": "[GitHub Action] Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files to match the repository and path each file actually has.",
+    "version": "1.0.0",
+    "license": "GPL-3.0-only",
+    "keywords": [
+        "github-action",
+        "repository",
+        "metadata"
+    ],
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "yaml": "^2.9.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.9.1",
+        "globals": "^17.12.0"
+    }
+}

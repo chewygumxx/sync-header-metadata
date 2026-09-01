@@ -1,0 +1,13 @@
+# vim:set expandtab shiftwidth=4 filetype=yaml:
+# SPDX-License-Identifier: GPL-3.0-only
+
+#
+#
+# ~chewygumxx/sync-header-metadata.git
+# ::: :/.github/header_ignore.yaml
+#
+#
+
+ignore:
+    - /package.json
+    - package-lock.json
