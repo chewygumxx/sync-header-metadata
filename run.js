@@ -192,7 +192,7 @@ for (const relpath of files) {
         log('INFO',   `Path line not found: ${repoPath}`);
         pathNotFound++;
     } else if (pathMarker.current === repoPath) {
-        log('INFO',   `Path line already correct: ${repoPath}`);
+        log('INFO',   `Path line correct: ${repoPath}`);
         pathCorrect++;
     } else if (verify) {
         log('ERROR',  `Path line out-of-sync: ${pathMarker.current} =/= ${repoPath}`);
