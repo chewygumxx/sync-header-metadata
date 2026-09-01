@@ -224,10 +224,10 @@ const summary =
 
 if (verify) {
     if (repoUpdated > 0 || pathUpdated > 0) {
-        log('NOTICE', `Verification Failed: ${summary}`);
+        log('NOTICE', `Verification Failed:\n${summary}`);
         process.exit(1);
     }
-    log('NOTICE', `Verification Passed: ${summary}`);
+    log('NOTICE', `Verification Passed:\n${summary}`);
 } else {
-    log('NOTICE', `Update Complete: ${summary}`);
+    log('NOTICE', `Update Complete:\n${summary}`);
 }
