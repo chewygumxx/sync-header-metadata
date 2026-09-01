@@ -42,13 +42,13 @@ jobs:
             - uses: actions/checkout@v7
               with:
                   ref: ${{ github.head_ref || github.ref_name }}
-                  verbose: 'true'
                   persist-credentials: true
 
             - name: Update tracked files
               uses: chewygumxx/sync-header-metadata@v1
               with:
                   mode: update
+                  verbose: 'true'
 
             - name: Commit changes
               uses: stefanzweifel/git-auto-commit-action@v7
