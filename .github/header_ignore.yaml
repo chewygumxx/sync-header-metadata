@@ -10,4 +10,5 @@
 
 ignore:
     - /package.json
-    - package-lock.json
+    - /package-lock.json
+    - /LICENSE
