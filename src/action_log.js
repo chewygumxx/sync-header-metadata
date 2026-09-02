@@ -23,44 +23,48 @@ function escapeProperty(value) {
         .replace(/,/g, '%2C');
 }
 
+function output(level, message) {
+    const output = typeof message === "string" ? message : message.join('\n');
+    console.log(`[${level.toUpperCase()}] ${output}`);
+}
+
+function annotate(command, opts) {
+    const message = opts.message;
+    const props = Object.entries(opts || {})
+        .filter(([key,])    => key   === "message")
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => `${key}=${escapeProperty(value)}`)
+        .join(',');
+    console.log(`::${command}${props ? ' ' + props : ''}::${escapeData(message)}`);
+}
+
+function wrap(command, opts, annotation_enabled) {
+    output(command, [opts.title, opts.message, opts.file]);
+    if (annotation_enabled) annotate(command, opts);
+}
+
 class ActionLog {
     constructor(verbose, annotation) {
         this.verbose    = verbose    === true;
         this.annotation = annotation === true;
     }
 
-    output(level, message) {
-        if (level === 'info' && !this.verbose) return;
-        console.log(`[${level.toUpperCase()}] ${message}`);
-    }
-
-    annotate(command, message, opts) {
-        if (!this.annotation) return;
-        const props = Object.entries(opts || {})
-            .filter(([, value]) => value !== undefined && value !== null && value !== '')
-            .map(([key, value]) => `${key}=${escapeProperty(value)}`)
-            .join(',');
-        console.log(`::${command}${props ? ' ' + props : ''}::${escapeData(message)}`);
-    }
-
     info(message) {
+        if (!this.verbose) return;
         this.output('info', message);
     }
-    notice(message, opts) {
-        this.output('notice', message);
-        this.annotate('notice', message, opts);
+    notice(opts) {
+        wrap('notice', opts, this.annotation)
     }
-    warn(message, opts) {
-        this.output('warn', message);
-        this.annotate('warning', message, opts);
+    warn(opts) {
+        wrap('warn',   opts, this.annotation)
     }
-    error(message, opts) {
-        this.output('error', message);
-        this.annotate('error', message, opts);
+    error(opts) {
+        wrap('error',  opts, this.annotation)
     }
     fatal(message, code = 1) {
         this.output('fatal', message);
-        this.annotate('error', message);
+        this.annotate('error', message, { title: `[FATAL] ${message}` });
         process.exit(typeof code === 'number' ? code : 1);
     }
 }

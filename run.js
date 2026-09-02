@@ -137,8 +137,11 @@ for (const relpath of files) {
         content = fs.readFileSync(filePath, 'utf8');
         parsed++;
     } catch {
-        log.warn(`Consider ignoring with .gitattributes: \`${relpath} -${ATTR}\` `,
-            { file: relpath, title: "Failed to read file as utf8 encoded" });
+        log.warn({
+            file: filePath,
+            title: "Failed to read file as utf8 encoded",
+            message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\` `
+        });
         unreadable++;
         continue;
     }
@@ -149,38 +152,62 @@ for (const relpath of files) {
     let changed = false;
     const repoMarker = findRepoMarker(lines);
     if (!repoMarker) {
-        log.error("No line in parsed file conformed to the provided pattern", { file: relpath, title: "Repo line not found" });
+        log.error({
+            file: filePath,
+            title: "Repo line not found",
+            message: "No line in parsed file conformed to the provided pattern"
+        });
         repoNotFound++;
     } else if (repoMarker.current === githubRepository) {
         log.info(`Repo line correct: ${repoPath}`);
         repoCorrect++;
     } else if (verify) {
-        log.error(`${repoMarker.current} =/= ${githubRepository}`, { file: relpath, title: "Repo line out-of-sync" })
+        log.error({
+            file: filePath,
+            title: "Repo line out-of-sync",
+            message: `${repoMarker.current} =/= ${githubRepository}`
+        })
         repoUpdated++;
     } else {
         const leader = lines[repoMarker.index].slice(0, repoMarker.splitAt);
         lines[repoMarker.index] = `${leader}~${githubRepository}.git`;
         changed = true;
-        log.notice(`${repoMarker.current} -> ${githubRepository}`, { file: relpath, title: "Repo line updated" })
+        log.notice({
+            file: filePath,
+            title: "Repo line updated",
+            message: `${repoMarker.current} -> ${githubRepository}`
+        })
         repoUpdated++;
     }
 
     // Filepath
     const pathMarker = findPathMarker(lines);
     if (!pathMarker) {
-        log.error("No line in parsed file conformed to the provided pattern", { file: relpath, title: "Path line not found" });
+        log.error({
+            file: filePath,
+            title: "Path line not found",
+            message: "No line in parsed file conformed to the provided pattern"
+        });
         pathNotFound++;
     } else if (pathMarker.current === repoPath) {
         log.info(`Path line correct: ${repoPath}`);
         pathCorrect++;
     } else if (verify) {
-        log.error(`${pathMarker.current} =/= ${repoPath}`, { file: relpath, title: "Path line out-of-sync" })
+        log.error({
+            file: filePath,
+            title: "Path line out-of-sync",
+            message: `${pathMarker.current} =/= ${repoPath}`
+        })
         pathUpdated++;
     } else {
         const leader = lines[pathMarker.index].slice(0, pathMarker.splitAt);
         lines[pathMarker.index] = `${leader}${repoPath}`;
         changed = true;
-        log.notice(`${pathMarker.current} -> ${repoPath}`, { file: relpath, title: "Path line updated" })
+        log.notice({
+            file: filePath,
+            title: "Path line updated",
+            message: `${pathMarker.current} -> ${repoPath}`
+        })
         pathUpdated++;
     }
 
