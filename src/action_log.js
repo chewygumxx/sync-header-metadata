@@ -52,7 +52,7 @@ function wrap(command, opts, annotation_enabled) {
         return;
     }
 
-    output(command, `${opts.title}: ${opts.message}${opts.file ? ` (${opts.file})` : ''}`);
+    output(command, `${opts.title}: ${opts.message}${opts.file ? ` ${opts.file}` : ''}`);
     if (annotation_enabled) annotate(command, opts);
 }
 
