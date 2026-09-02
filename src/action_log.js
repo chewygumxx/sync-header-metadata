@@ -35,15 +35,12 @@ function annotate(command, opts) {
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => `${key}=${escapeProperty(value)}`)
         .join(',');
-    console.log(`::${command}${props ? ' ' + props : ''}::${escapeData(message)}`);
+    console.log(`::${command}${props ? ' ' + props : ''}::${escapeData(message)} (${escapeData(opts.file)})`);
 }
 
 function wrap(command, opts, annotation_enabled) {
-    if (annotation_enabled) {
-        annotate(command, opts);
-    } else {
-        output(command, [opts.title, opts.message, opts.file]);
-    }
+    output(command, [opts.title, opts.message, opts.file]);
+    if (annotation_enabled) annotate(command, opts);
 }
 
 class ActionLog {
