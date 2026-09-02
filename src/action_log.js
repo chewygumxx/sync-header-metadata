@@ -35,7 +35,7 @@ function annotate(command, opts) {
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => `${key}=${escapeProperty(value)}`)
         .join(',');
-    console.log(`::${command}${props ? ' ' + props : ''}::${escapeData(message)} (${escapeData(opts.file)})`);
+    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(message)} (${escapeData(opts.file)})`);
 }
 
 function wrap(command, opts, annotation_enabled) {

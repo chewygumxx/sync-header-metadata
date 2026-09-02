@@ -138,7 +138,7 @@ for (const relpath of files) {
         parsed++;
     } catch {
         log.warn({
-            file: filePath,
+            file: relpath,
             title: "Failed to read file as utf8 encoded",
             message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\` `
         });
@@ -153,7 +153,7 @@ for (const relpath of files) {
     const repoMarker = findRepoMarker(lines);
     if (!repoMarker) {
         log.error({
-            file: filePath,
+            file: relpath,
             title: "Repo line not found",
             message: "No line in parsed file conformed to the provided pattern"
         });
@@ -163,7 +163,7 @@ for (const relpath of files) {
         repoCorrect++;
     } else if (verify) {
         log.error({
-            file: filePath,
+            file: relpath,
             title: "Repo line out-of-sync",
             message: `${repoMarker.current} =/= ${githubRepository}`
         })
@@ -173,7 +173,7 @@ for (const relpath of files) {
         lines[repoMarker.index] = `${leader}~${githubRepository}.git`;
         changed = true;
         log.notice({
-            file: filePath,
+            file: relpath,
             title: "Repo line updated",
             message: `${repoMarker.current} -> ${githubRepository}`
         })
@@ -184,7 +184,7 @@ for (const relpath of files) {
     const pathMarker = findPathMarker(lines);
     if (!pathMarker) {
         log.error({
-            file: filePath,
+            file: relpath,
             title: "Path line not found",
             message: "No line in parsed file conformed to the provided pattern"
         });
@@ -194,7 +194,7 @@ for (const relpath of files) {
         pathCorrect++;
     } else if (verify) {
         log.error({
-            file: filePath,
+            file: relpath,
             title: "Path line out-of-sync",
             message: `${pathMarker.current} =/= ${repoPath}`
         })
@@ -204,7 +204,7 @@ for (const relpath of files) {
         lines[pathMarker.index] = `${leader}${repoPath}`;
         changed = true;
         log.notice({
-            file: filePath,
+            file: relpath,
             title: "Path line updated",
             message: `${pathMarker.current} -> ${repoPath}`
         })
