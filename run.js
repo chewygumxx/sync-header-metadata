@@ -23,18 +23,18 @@ const ActionLog = require('./src/action_log.js');
 // ------------------
 
 const log = new ActionLog(
-    process.env.INPUT_VERBOSE    === 'true',
-    process.env.INPUT_ANNOTATION === 'true',
+    (process.env.INPUT_VERBOSE    || '').toLowerCase() === 'true',
+    (process.env.INPUT_ANNOTATION || '').toLowerCase() === 'true',
 );
+
+const rawMode = (process.env.INPUT_MODE || '').toLowerCase() || 'verify';
+if (rawMode !== 'verify' && rawMode !== 'update')
+    log.fatal(`Invalid mode: Must be 'verify' or 'update', received: ${rawMode}`);
+const verify = rawMode === 'verify';
 
 const githubRepository = process.env.GITHUB_REPOSITORY;
 if (!githubRepository)
     log.fatal("Environment variable not set: GITHUB_REPOSITORY");
-
-const rawMode = process.env.INPUT_MODE || 'verify';
-if (rawMode !== 'verify' && rawMode !== 'update')
-    log.fatal(`Invalid mode: Must be 'verify' or 'update', received: ${rawMode}`);
-const verify = rawMode === 'verify';
 
 
 // ------------------------
