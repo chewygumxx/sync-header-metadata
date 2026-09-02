@@ -165,7 +165,8 @@ for (const relpath of files) {
         log.error({
             file: relpath,
             title: "Repo line out-of-sync",
-            message: `${repoMarker.current} =/= ${githubRepository}`
+            message: `${repoMarker.current} =/= ${githubRepository}`,
+            startLine: repoMarker.index + 1
         })
         repoUpdated++;
     } else {
@@ -175,7 +176,8 @@ for (const relpath of files) {
         log.notice({
             file: relpath,
             title: "Repo line updated",
-            message: `${repoMarker.current} -> ${githubRepository}`
+            message: `${repoMarker.current} -> ${githubRepository}`,
+            startLine: repoMarker.index + 1
         })
         repoUpdated++;
     }
@@ -196,7 +198,8 @@ for (const relpath of files) {
         log.error({
             file: relpath,
             title: "Path line out-of-sync",
-            message: `${pathMarker.current} =/= ${repoPath}`
+            message: `${pathMarker.current} =/= ${repoPath}`,
+            startLine: pathMarker.index + 1
         })
         pathUpdated++;
     } else {
@@ -206,7 +209,8 @@ for (const relpath of files) {
         log.notice({
             file: relpath,
             title: "Path line updated",
-            message: `${pathMarker.current} -> ${repoPath}`
+            message: `${pathMarker.current} -> ${repoPath}`,
+            startLine: pathMarker.index + 1
         })
         pathUpdated++;
     }

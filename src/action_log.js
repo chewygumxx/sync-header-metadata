@@ -28,18 +28,25 @@ function output(level, message) {
     console.log(`[${level.toUpperCase()}] ${output}`);
 }
 
+// GitHub's workflow-command annotation properties are named file/line/endLine/
+// col/endColumn/title; startLine/endLine here mirror @actions/core's
+// AnnotationProperties naming, translated to the wire names GitHub expects.
 function annotate(command, opts) {
-    const message = typeof opts.message === "string" ? opts.message : '' + typeof opts.file === "string" ? ` (${opts.file})` : '';
-    const props = Object.entries(opts)
-        .filter(([key,])    => key   !== "message")
+    const commandProps = {
+        title:   opts.title,
+        file:    opts.file,
+        line:    opts.startLine,
+        endLine: opts.endLine || opts.startLine,
+    };
+    const props = Object.entries(commandProps)
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => `${key}=${escapeProperty(value)}`)
         .join(',');
-    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(message)} `);
+    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(opts.message)}`);
 }
 
 function wrap(command, opts, annotation_enabled) {
-    output(command, `${opts.title}: ${opts.message} (${opts.file})`);
+    output(command, `${opts.title}: ${opts.message}${opts.file ? ` (${opts.file})` : ''}`);
     if (annotation_enabled) annotate(command, opts);
 }
 
