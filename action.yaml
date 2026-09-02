@@ -26,6 +26,10 @@ inputs:
         description: Enable INFO-level logging.
         required:    false
         default:    'false'
+    annotation:
+        description: Enable annotation.
+        required:    false
+        default:    'false'
 
 runs:
     using: node20
