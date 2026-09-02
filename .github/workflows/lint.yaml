@@ -1,0 +1,50 @@
+# vim:set expandtab shiftwidth=4 filetype=yaml foldlevel=5:
+# SPDX-License-Identifier: GPL-3.0-only
+
+#
+#
+# ~chewygumxx/sync-header-metadata.git
+# ::: :/.github/workflows/lint.yaml
+#
+#
+
+name: Lint
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+    workflow_dispatch: {}
+
+env:
+    ACTIONLINT_RELEASE: v1.7.2
+
+permissions:
+    contents: read
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: actions/setup-node@v7
+              with:
+                  cache: npm
+                  node-version: 20
+
+            - name:  ESLint
+              shell: bash
+              run: |
+                npm ci
+                npx eslint .
+
+            - name:  ActionLint
+              shell: bash
+              run: |
+                bash <(curl -s "https://raw.githubusercontent.com/rhysd/actionlint/${ACTIONLINT_RELEASE}/scripts/download-actionlint.bash")
+                # Ignore false positives
+                ./actionlint -color \
+                    -ignore 'missing input "app-id" which is required by action "actions/create-github-app-token@v3"' \
+                    -ignore 'input "client-id" is not defined in action "actions/create-github-app-token@v3"'
