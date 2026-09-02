@@ -13,7 +13,6 @@
 
 const { execFileSync } = require('node:child_process');
 const fs               = require('node:fs');
-const YAML             = require('yaml');
 
 
 // ------------------
@@ -41,8 +40,6 @@ const githubRepository = process.env.GITHUB_REPOSITORY;
 if (!githubRepository)
     fatal("Environment variable not set: GITHUB_REPOSITORY");
 
-const ignoreConfigPath = process.env.INPUT_IGNORE_CONFIG || ".github/header_ignore.yaml";
-
 
 // ----------------------
 // Resolve Tracked Files
@@ -61,46 +58,34 @@ try {
     fatal('Not inside a git repository');
 }
 
-let ignorePatterns = [];
-try {
-    const raw = fs.readFileSync(`${repoRoot}/${ignoreConfigPath}`, 'utf8');
-    const doc = YAML.parse(raw) ?? {};
-    ignorePatterns = doc.ignore ?? [];
-    if (!Array.isArray(ignorePatterns) || !ignorePatterns.every(p => typeof p === 'string'))
-        fatal(`${ignoreConfigPath}: 'ignore' must be a list of strings`);
-} catch (err) {
-    if (err.code !== 'ENOENT')
-        fatal(`${ignoreConfigPath}: ${err.message}`);
-}
-
-for (const p of ignorePatterns) {
-    if (p.startsWith('!'))
-        fatal(`${ignoreConfigPath}: negation patterns are not supported: ${p}`);
-}
-
-// A leading '/' anchors to the repo root, strip it since pathspecs are already
-// root-relative.
-//
-// A pattern with no remaining '/' would otherwise only match at the top level
-// under pathspec glob matching, so such patterns are prefixed with '**/' to
-// restore that behavior.
-const pathspecs = ignorePatterns.map(p => {
-    const anchored = p.startsWith('/') ? p.slice(1) : p;
-    const pattern  = anchored.includes('/') ? anchored : `**/${anchored}`;
-    return `:(exclude,glob)${pattern}`;
-});
-
 let fileListRaw;
 try {
-    fileListRaw = execFileSync(
-        'git',
-        ['-C', repoRoot, 'ls-files', '--', ...pathspecs],
-        { encoding: 'utf8' }
-    );
+    fileListRaw = execFileSync('git', ['-C', repoRoot, 'ls-files', '-z'], { encoding: 'utf8' });
 } catch (err) {
-    fatal(`${ignoreConfigPath}: invalid ignore pattern(s): ${err.message}`);
+    fatal(`Failed to list tracked files: ${err.message}`);
 }
-const files = fileListRaw.split('\n').filter(Boolean);
+const allFiles = fileListRaw.split('\0').filter(Boolean);
+
+// A file opts out of header syncing by explicitly unsetting the
+// 'sync-header-metadata' boolean attribute in .gitattributes, e.g.:
+//   /LICENSE -sync-header-metadata
+const ATTR = 'sync-header-metadata';
+let checkAttrRaw = '';
+if (allFiles.length > 0) {
+    checkAttrRaw = execFileSync(
+        'git',
+        ['-C', repoRoot, 'check-attr', '-z', '--stdin', ATTR],
+        { input: allFiles.join('\0'), encoding: 'utf8' }
+    );
+}
+const attrParts = checkAttrRaw.split('\0');
+attrParts.pop();
+const ignored = new Set();
+for (let i = 0; i < attrParts.length; i += 3) {
+    if (attrParts[i + 2] === 'unset') ignored.add(attrParts[i]);
+}
+const files = allFiles.filter(f => !ignored.has(f));
+
 if (files.length === 0) {
     log('WARN', 'No tracked files found in repository');
     process.exit(0);
