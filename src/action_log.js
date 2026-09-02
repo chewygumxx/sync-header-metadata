@@ -29,18 +29,17 @@ function output(level, message) {
 }
 
 function annotate(command, opts) {
-    const message = opts.message;
-    const props = Object.entries(opts || {})
-        .filter(([key,])    => key   === "message")
+    const props = Object.entries(opts)
+        .filter(([key,])    => key   !== "message")
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => `${key}=${escapeProperty(value)}`)
         .join(',');
-    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(message)} (${escapeData(opts.file)})`);
+    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(opts.message)}`);
 }
 
-function wrap(command, opts, annotation_enabled) {
-    output(command, [opts.title, opts.message, opts.file]);
-    if (annotation_enabled) annotate(command, opts);
+function wrap(command, message, opts, annotation_enabled) {
+    output(command, [opts.title, message, opts.file]);
+    if (annotation_enabled) annotate(command, { ...opts, message });
 }
 
 class ActionLog {
@@ -53,18 +52,18 @@ class ActionLog {
         if (!this.verbose) return;
         output('info', message);
     }
-    notice(opts) {
-        wrap('notice', opts, this.annotation)
+    notice(message, opts = {}) {
+        wrap('notice', message, opts, this.annotation)
     }
-    warn(opts) {
-        wrap('warn',   opts, this.annotation)
+    warn(message, opts = {}) {
+        wrap('warn',   message, opts, this.annotation)
     }
-    error(opts) {
-        wrap('error',  opts, this.annotation)
+    error(message, opts = {}) {
+        wrap('error',  message, opts, this.annotation)
     }
     fatal(message, code = 1) {
         output('fatal', message);
-        this.annotate('error', message, { title: `[FATAL] ${message}` });
+        if (this.annotation) annotate('error', { message, title: `[FATAL] ${message}` });
         process.exit(typeof code === 'number' ? code : 1);
     }
 }

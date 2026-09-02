@@ -228,12 +228,15 @@ const summary =
     `    Path line - ${verify ? 'Out-of-Sync' : 'Updated'}: ${pathUpdated}, Correct: ${pathCorrect}, Not found: ${pathNotFound}\n` +
     `    Files unreadable: ${unreadable}`;
 
+let sumTitle;
 if (verify) {
     if (repoUpdated > 0 || pathUpdated > 0) {
-        log.error(summary, { title: "Verification Failed" });
+        sumTitle = "Verification Failed";
+        log.error(summary, { title: sumTitle, message: `${sumTitle}:\n${summary}` });
         process.exit(1);
     }
-    log.notice(summary, { title: "Verification Passed" });
+    sumTitle = "Verification Passed";
 } else {
-    log.notice(summary, { title: "Update Complete" });
+    sumTitle = "Update Complete";
 }
+log.notice(summary, { title: sumTitle, message: `${sumTitle}:\n${summary}` });

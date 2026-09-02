@@ -133,6 +133,21 @@ manner as any other ignored path or learn this security restriction at push.
 permission, excluding as shown, or manually updating the out-of-sync workflow
 header.)*
 
+### Annotation limits
+
+GitHub caps workflow annotations at 10 errors, 10 warnings, and 10 notices
+per step, regardless of the `annotation` input. This action runs as a single
+step and can emit up to two `error` annotations per drifted file (one for
+the repo line, one for the path line), so a repo with more than a handful of
+drifted files will exceed the cap: only the first 10 of each level render in
+the PR's Checks/Files-changed UI, the rest are silently dropped by GitHub.
+
+This doesn't affect correctness, the exit code and the plain `[ERROR]` log
+lines printed to the job's raw log aren't subject to the cap, only the
+`::error::`/`::warning::`/`::notice::` UI annotations are. Treat annotations
+as a convenience for small drifts and rely on the job log or `mode: update`'s
+diff for anything larger.
+
 ## Development
 
 A native `node24` action: GitHub Actions runs `run.js` directly with the
