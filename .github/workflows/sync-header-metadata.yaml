@@ -27,8 +27,9 @@ jobs:
             - name: Verify tracked files
               uses: chewygumxx/sync-header-metadata@v2
               with:
-                  mode: verify
-                  verbose: 'true'
+                  mode:        verify
+                  verbose:    'true'
+                  annotation: 'true'
 
     update:
         runs-on: ubuntu-latest
@@ -47,8 +48,9 @@ jobs:
             - name: Update tracked files
               uses: chewygumxx/sync-header-metadata@v2
               with:
-                  mode: update
-                  verbose: 'true'
+                  mode:        update
+                  verbose:    'true'
+                  annotation: 'true'
 
             - name: Commit changes
               uses: stefanzweifel/git-auto-commit-action@v7
