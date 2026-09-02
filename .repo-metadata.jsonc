@@ -15,8 +15,8 @@
     "slug":  "chewygumxx/sync-header-metadata",
     "default_branch": "main",
     "description": "[GitHub Action] Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files to match the repository and path each file actually has.",
-    "category": "github-action",
-    "topics": [ "github-action", "metadata", "repository" ],
+    "category": "github-actions",
+    "topics": [ "github-actions", "metadata", "repository" ],
     "language": "javascript",
     "immutable_releases": true,
     "license": {
