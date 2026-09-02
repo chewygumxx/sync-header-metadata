@@ -43,7 +43,12 @@ displaced, those two lines quietly go stale. This action finds every tracked
 file whose banner has drifted from its current repository and/or path and either
 loudly fails (`verify` mode), or rewrites it (`update` mode). The logic is
 commentstring invariant and will perform irrespective of surrounding language
-syntax eg. `-- %s`, `// %s`, `# %s`, `u<!-- %s -->`, `/* %s */`, et cetera.
+syntax eg. `-- %s`, `// %s`, `# %s`, `; %s`, et cetera.
+
+Both markers must be the last non-whitespace content on their line, so this
+matches the multi-line comment-block style shown above (marker on its own
+line, closer on a separate line), but not a single-line closed comment like
+`<!-- ~owner/repo.git -->` or `/* ~owner/repo.git */`.
 
 ## Usage
 
@@ -80,10 +85,11 @@ for a complete, worked example.
 
 ### Inputs
 
-| Input     | Required | Default   | Description                                                   |
-|-----------|----------|-----------|---------------------------------------------------------------|
-| `mode`    | No       | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place. |
-| `verbose` | No       | `false`   | Enable INFO-level logging.                                    |
+| Input        | Required | Default   | Description                                                        |
+|--------------|----------|-----------|---------------------------------------------------------------------|
+| `mode`       | No       | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place.     |
+| `verbose`    | No       | `false`   | Enable INFO-level logging.                                         |
+| `annotation` | No       | `false`   | Emit `::notice::`/`::warning::`/`::error::` workflow annotations. |
 
 ### Ignoring files
 
@@ -98,8 +104,8 @@ vendor/**  -sync-header-metadata
 
 Standard `.gitattributes` matching applies:
 
-- A bare pattern with no leading `/` matches at any depth, 
-- Aleading `/` anchors it to that `.gitattributes` file's own directory
+- A bare pattern with no leading `/` matches at any depth.
+- A leading `/` anchors it to that `.gitattributes` file's own directory.
 - Nested `.gitattributes` files can re-enable syncing for a subtree per greater
   specificity by setting the attribute back, e.g.
   `important/** sync-header-metadata`.

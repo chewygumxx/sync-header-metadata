@@ -11,58 +11,54 @@
 
 'use strict';
 
-const { execFileSync } = require('node:child_process');
 const fs               = require('node:fs');
+const { execFileSync } = require('node:child_process');
+
+const ActionLog = require('./src/action_log.js');
+
 
 
 // ------------------
 // Parse Environment
 // ------------------
 
-const verbose = process.env.INPUT_VERBOSE === 'true';
-
-function log(level, message) {
-    if (level === 'INFO' && !verbose) return;
-    process.stderr.write(`[${level}] ${message}\n`);
-}
-
-function fatal(message) {
-    log('FATAL', message);
-    process.exit(1);
-}
-
-const rawMode = process.env.INPUT_MODE || 'verify';
-if (rawMode !== 'verify' && rawMode !== 'update')
-    fatal(`mode must be 'verify' or 'update', received: ${rawMode}`);
-const verify = rawMode === 'verify';
+const log = new ActionLog(
+    process.env.INPUT_VERBOSE    === 'true',
+    process.env.INPUT_ANNOTATION === 'true',
+);
 
 const githubRepository = process.env.GITHUB_REPOSITORY;
 if (!githubRepository)
-    fatal("Environment variable not set: GITHUB_REPOSITORY");
+    log.fatal("Environment variable not set: GITHUB_REPOSITORY");
+
+const rawMode = process.env.INPUT_MODE || 'verify';
+if (rawMode !== 'verify' && rawMode !== 'update')
+    log.fatal(`Invalid mode: Must be 'verify' or 'update', received: ${rawMode}`);
+const verify = rawMode === 'verify';
 
 
-// ----------------------
-// Resolve Tracked Files
-// ----------------------
+// ------------------------
+// Helper: Resolve Tracked
+// ------------------------
 
 try {
     execFileSync('git', ['--version'], { stdio: 'ignore' });
 } catch {
-    fatal('Dependency not found in PATH: git');
+    log.fatal('Dependency not found in PATH: git', 127);
 }
 
 let repoRoot;
 try {
     repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 } catch {
-    fatal('Not inside a git repository');
+    log.fatal('Not inside a git repository');
 }
 
 let fileListRaw;
 try {
     fileListRaw = execFileSync('git', ['-C', repoRoot, 'ls-files', '-z'], { encoding: 'utf8' });
 } catch (err) {
-    fatal(`Failed to list tracked files: ${err.message}`);
+    log.fatal(`Failed to list tracked files: ${err.message}`);
 }
 const allFiles = fileListRaw.split('\0').filter(Boolean);
 
@@ -87,7 +83,7 @@ for (let i = 0; i < attrParts.length; i += 3) {
 const files = allFiles.filter(f => !ignored.has(f));
 
 if (files.length === 0) {
-    log('WARN', 'No tracked files found in repository');
+    log.warn('No tracked files found in repository', { title: "Nothing Found" });
     process.exit(0);
 }
 
@@ -144,7 +140,8 @@ for (const relpath of files) {
         content = fs.readFileSync(filePath, 'utf8');
         parsed++;
     } catch {
-        log('INFO',   `Failed to read file as utf8 encoded: ${repoPath}`);
+        log.warn(`Consider ignoring with .gitattributes: \`${relpath} -${ATTR}\` `,
+            { file: relpath, title: "Failed to read file as utf8 encoded" });
         unreadable++;
         continue;
     }
@@ -155,38 +152,38 @@ for (const relpath of files) {
     let changed = false;
     const repoMarker = findRepoMarker(lines);
     if (!repoMarker) {
-        log('INFO',   `Repo line not found: ${repoPath}`);
+        log.error("No line in parsed file conformed to the provided pattern", { file: relpath, title: "Repo line not found" });
         repoNotFound++;
     } else if (repoMarker.current === githubRepository) {
-        log('INFO',   `Repo line correct: ${repoPath}`);
+        log.info(`Repo line correct: ${repoPath}`);
         repoCorrect++;
     } else if (verify) {
-        log('ERROR',  `Repo line out-of-sync: (${repoMarker.current} =/= ${githubRepository}) ${repoPath}`);
+        log.error(`${repoMarker.current} =/= ${githubRepository}`, { file: relpath, title: "Repo line out-of-sync" })
         repoUpdated++;
     } else {
         const leader = lines[repoMarker.index].slice(0, repoMarker.splitAt);
         lines[repoMarker.index] = `${leader}~${githubRepository}.git`;
         changed = true;
-        log('NOTICE', `Repo line updated: (${repoMarker.current} -> ${githubRepository}) ${repoPath}`);
+        log.notice(`${repoMarker.current} -> ${githubRepository}`, { file: relpath, title: "Repo line updated" })
         repoUpdated++;
     }
 
     // Filepath
     const pathMarker = findPathMarker(lines);
     if (!pathMarker) {
-        log('INFO',   `Path line not found: ${repoPath}`);
+        log.error("No line in parsed file conformed to the provided pattern", { file: relpath, title: "Path line not found" });
         pathNotFound++;
     } else if (pathMarker.current === repoPath) {
-        log('INFO',   `Path line correct: ${repoPath}`);
+        log.info(`Path line correct: ${repoPath}`);
         pathCorrect++;
     } else if (verify) {
-        log('ERROR',  `Path line out-of-sync: ${pathMarker.current} =/= ${repoPath}`);
+        log.error(`${pathMarker.current} =/= ${repoPath}`, { file: relpath, title: "Path line out-of-sync" })
         pathUpdated++;
     } else {
         const leader = lines[pathMarker.index].slice(0, pathMarker.splitAt);
         lines[pathMarker.index] = `${leader}${repoPath}`;
         changed = true;
-        log('NOTICE', `Path line updated: ${pathMarker.current} -> ${repoPath}`);
+        log.notice(`${pathMarker.current} -> ${repoPath}`, { file: relpath, title: "Path line updated" })
         pathUpdated++;
     }
 
@@ -209,10 +206,10 @@ const summary =
 
 if (verify) {
     if (repoUpdated > 0 || pathUpdated > 0) {
-        log('NOTICE', `Verification Failed:\n${summary}`);
+        log.error(summary, { title: "Verification Failed" });
         process.exit(1);
     }
-    log('NOTICE', `Verification Passed:\n${summary}`);
+    log.notice(summary, { title: "Verification Passed" });
 } else {
-    log('NOTICE', `Update Complete:\n${summary}`);
+    log.notice(summary, { title: "Update Complete" });
 }
