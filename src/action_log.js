@@ -39,8 +39,11 @@ function annotate(command, opts) {
 }
 
 function wrap(command, opts, annotation_enabled) {
-    output(command, [opts.title, opts.message, opts.file]);
-    if (annotation_enabled) annotate(command, opts);
+    if (annotation_enabled) {
+        annotate(command, opts);
+    } else {
+        output(command, [opts.title, opts.message, opts.file]);
+    }
 }
 
 class ActionLog {
@@ -51,7 +54,7 @@ class ActionLog {
 
     info(message) {
         if (!this.verbose) return;
-        this.output('info', message);
+        output('info', message);
     }
     notice(opts) {
         wrap('notice', opts, this.annotation)
@@ -63,7 +66,7 @@ class ActionLog {
         wrap('error',  opts, this.annotation)
     }
     fatal(message, code = 1) {
-        this.output('fatal', message);
+        output('fatal', message);
         this.annotate('error', message, { title: `[FATAL] ${message}` });
         process.exit(typeof code === 'number' ? code : 1);
     }
