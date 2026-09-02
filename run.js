@@ -105,18 +105,15 @@ function findRepoMarker(lines) {
 }
 
 const REPO_MARKER_RE = /~(\S+\/\S+?)\.git\s*$/;
-const PATH_MARKER = ' ::: :/';
+const PATH_MARKER_RE = / ::: :(\/\S*)\s*$/;
 function findPathMarker(lines) {
     for (let i = 0; i < lines.length; i++) {
-        const char_idx = lines[i].indexOf(PATH_MARKER);
-        if (char_idx !== -1) {
-            const splitAt  = char_idx + PATH_MARKER.length - 1;
-            return {
-                index:   i,
-                splitAt: splitAt,
-                current: lines[i].slice(splitAt)
-            };
-        }
+        const m = PATH_MARKER_RE.exec(lines[i]);
+        if (m) return {
+            index:   i,
+            splitAt: m.index + m[0].indexOf(m[1]),
+            current: m[1]
+        };
     }
     return null;
 }

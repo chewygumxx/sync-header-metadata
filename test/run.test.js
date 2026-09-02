@@ -52,12 +52,12 @@ function gitAdd(dir) {
 // baked into the two marker lines; they're deliberately independent of
 // each other and of the file's real location, so callers can construct
 // "drifted" headers on purpose.
-function header({ repo, filepath, eol = '\n' }) {
+function header({ repo, filepath, eol = '\n', pathTrailingSpace = '' }) {
     const lines = [
         '// vim:set expandtab:',
         '//',
         `// ~${repo}.git`,
-        `// ::: :${filepath}`,
+        `// ::: :${filepath}${pathTrailingSpace}`,
         '//',
         'console.log("hi");',
         '',
@@ -121,6 +121,17 @@ test('verify mode fails when the path line has drifted', (t) => {
 
     const result = runAction(dir, { INPUT_MODE: 'verify' });
     assert.equal(result.status, 1);
+});
+
+test('verify mode passes when the path line has trailing whitespace but is otherwise correct', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'owner/repo', filepath: '/foo.js', pathTrailingSpace: '   ' }));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'verify' });
+    assert.equal(result.status, 0);
 });
 
 test('update mode rewrites a drifted repo line and leaves an already-correct path line as-is', (t) => {
