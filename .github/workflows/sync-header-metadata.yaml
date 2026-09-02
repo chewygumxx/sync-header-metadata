@@ -45,7 +45,7 @@ jobs:
                   persist-credentials: true
 
             - name: Update tracked files
-              uses: chewygumxx/sync-header-metadata@v1
+              uses: chewygumxx/sync-header-metadata@v2
               with:
                   mode: update
                   verbose: 'true'

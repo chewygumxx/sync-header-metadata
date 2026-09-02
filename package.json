@@ -1,7 +1,7 @@
 {
     "name": "sync-header-metadata",
     "description": "[GitHub Action] Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files.",
-    "version": "2.0.0-alpha.1",
+    "version": "2.0.0",
     "license": "GPL-3.0-only",
     "keywords": [
         "github-actions",
