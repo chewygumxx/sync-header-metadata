@@ -25,7 +25,7 @@ jobs:
             - uses: actions/checkout@v7
 
             - name: Verify tracked files
-              uses: chewygumxx/sync-header-metadata@v1
+              uses: chewygumxx/sync-header-metadata@v2
               with:
                   mode: verify
                   verbose: 'true'

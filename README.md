@@ -58,7 +58,7 @@ To verify without rewrite, failing on drift.
 - uses: actions/checkout@v7
 
 - name: Verify header repository and path
-  uses: chewygumxx/sync-header-metadata@v1
+  uses: chewygumxx/sync-header-metadata@v2
 ```
 
 To rewrite and update files instead of failing on desync:
@@ -70,7 +70,7 @@ To rewrite and update files instead of failing on desync:
       persist-credentials: true
 
 - name: Update tracked files
-  uses: chewygumxx/sync-header-metadata@v1
+  uses: chewygumxx/sync-header-metadata@v2
   with:
       mode: update
 
