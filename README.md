@@ -148,6 +148,23 @@ lines printed to the job's raw log aren't subject to the cap, only the
 as a convenience for small drifts and rely on the job log or `mode: update`'s
 diff for anything larger.
 
+A GitHub check run is bound to a single commit (`head_sha`) for its whole
+lifetime, and an annotation only renders as an inline bubble on that commit's
+own "Files changed" page if the annotated file is part of *that specific
+commit's* diff. This action scans every tracked file on each run, not just
+what the triggering commit touched, so the use case matters:
+
+- **`verify` mode gating a PR** that renamed or moved a file: the drifted
+  file is, by definition, part of that PR's own diff, so the annotation
+  lands inline exactly where it's useful. This is the primary intended use
+  case and where annotations work well.
+- **`update` mode as a scheduled or manually dispatched sweep** across a
+  repo's whole tracked-file set (e.g. a periodic cleanup job): most flagged
+  files have nothing to do with whatever commit triggered that run, so most
+  annotations can't attach to a diff line at all. They still show up in the
+  workflow run's own Annotations summary panel, just without a working deep
+  link. Rely on the job log and exit code for this shape of run instead.
+
 ## Development
 
 A native `node24` action: GitHub Actions runs `run.js` directly with the

@@ -155,7 +155,7 @@ for (const relpath of files) {
         log.error({
             file: relpath,
             title: "Repo line not found",
-            message: "No line in parsed file conformed to the provided pattern"
+            message: ""
         });
         repoNotFound++;
     } else if (repoMarker.current === githubRepository) {
@@ -188,7 +188,7 @@ for (const relpath of files) {
         log.error({
             file: relpath,
             title: "Path line not found",
-            message: "No line in parsed file conformed to the provided pattern"
+            message: ""
         });
         pathNotFound++;
     } else if (pathMarker.current === repoPath) {
