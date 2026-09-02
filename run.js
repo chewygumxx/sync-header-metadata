@@ -83,7 +83,7 @@ for (let i = 0; i < attrParts.length; i += 3) {
 const files = allFiles.filter(f => !ignored.has(f));
 
 if (files.length === 0) {
-    log.warn('No tracked files found in repository', { title: "Nothing Found" });
+    log.warn({ title: "Nothing Found", message: "No tracked files found in repository" });
     process.exit(0);
 }
 
@@ -232,11 +232,11 @@ let sumTitle;
 if (verify) {
     if (repoUpdated > 0 || pathUpdated > 0) {
         sumTitle = "Verification Failed";
-        log.error(summary, { title: sumTitle, message: `${sumTitle}:\n${summary}` });
+        log.error({ title: sumTitle, message: `${sumTitle}:\n${summary}` });
         process.exit(1);
     }
     sumTitle = "Verification Passed";
 } else {
     sumTitle = "Update Complete";
 }
-log.notice(summary, { title: sumTitle, message: `${sumTitle}:\n${summary}` });
+log.notice({ title: sumTitle, message: `${sumTitle}:\n${summary}` });

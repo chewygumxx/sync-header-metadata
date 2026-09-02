@@ -29,13 +29,14 @@ function output(level, message) {
 }
 
 function annotate(command, opts) {
-    const message = opts.message;
+    const message = typeof opts.message === "string" ? opts.message : '' + typeof opts.file === "string" ? ` (${opts.file})` : '';
     const props = Object.entries(opts)
         .filter(([key,])    => key   !== "message")
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
         .map(([key, value]) => `${key}=${escapeProperty(value)}`)
         .join(',');
-    console.log(`::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(message)} (${escapeData(opts.file)})`);
+    const command_props = `::${command === 'warn' ? 'warning' : command}${props ? ' ' + props : ''}::${escapeData(message)} `;
+    console.log();
 }
 
 function wrap(command, opts, annotation_enabled) {
@@ -64,7 +65,7 @@ class ActionLog {
     }
     fatal(message, code = 1) {
         output('fatal', message);
-        annotate('error', message, { title: `[FATAL] ${message}` });
+        annotate('error', { title: `[FATAL] ${message}`, message: `[FATAL] ${message}` });
         process.exit(typeof code === 'number' ? code : 1);
     }
 }
