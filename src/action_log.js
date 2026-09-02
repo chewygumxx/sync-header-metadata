@@ -46,12 +46,6 @@ function annotate(command, opts) {
 }
 
 function wrap(command, opts, annotation_enabled) {
-    // Post-Execution Summary
-    if (opts.title.substring(0, 5) === "Update" || opts.title.substring(0, 11) === "Verification") {
-        annotate(command, opts);
-        return;
-    }
-
     output(command, `${opts.title}: ${opts.message}${opts.file ? ` ${opts.file}` : ''}`);
     if (annotation_enabled) annotate(command, opts);
 }
