@@ -238,3 +238,79 @@ test('a nested .gitattributes can re-enable syncing for a subtree excluded by it
         'nested override should have re-enabled syncing'
     );
 });
+
+
+// -------------
+// Annotations
+// -------------
+
+test('annotation input off (the default) prints no workflow-command lines at all', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'wrong/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'verify' });
+    assert.equal(result.status, 1);
+    assert.doesNotMatch(result.stdout, /::(error|warning|notice)\b/);
+});
+
+test('annotation mode emits a well-formed ::error:: with file and line for a drifted repo line', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'wrong/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'verify', INPUT_ANNOTATION: 'true' });
+    assert.equal(result.status, 1);
+    assert.match(
+        result.stdout,
+        /::error title=Repo line out-of-sync,file=foo\.js,line=3,endLine=3::wrong\/repo =\/= owner\/repo/
+    );
+});
+
+test('annotation mode emits a well-formed ::error:: with file and line for a drifted path line', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'owner/repo', filepath: '/stale/path.js' }));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'verify', INPUT_ANNOTATION: 'true' });
+    assert.equal(result.status, 1);
+    assert.match(
+        result.stdout,
+        /::error title=Path line out-of-sync,file=foo\.js,line=4,endLine=4::\/stale\/path\.js =\/= \/foo\.js/
+    );
+});
+
+test('annotation mode emits a well-formed ::notice:: with file and line when update mode rewrites a line', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'wrong/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'update', INPUT_ANNOTATION: 'true' });
+    assert.equal(result.status, 0);
+    assert.match(
+        result.stdout,
+        /::notice title=Repo line updated,file=foo\.js,line=3,endLine=3::wrong\/repo -> owner\/repo/
+    );
+});
+
+test('a missing header emits ::warning:: (not ::error::) and does not fail verification', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'plain.txt', 'just some text\nwith no markers at all\n');
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: 'verify', INPUT_ANNOTATION: 'true' });
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /::warning title=Repo line not found,file=plain\.txt::/);
+    assert.match(result.stdout, /::warning title=Path line not found,file=plain\.txt::/);
+    assert.doesNotMatch(result.stdout, /::error/);
+});
