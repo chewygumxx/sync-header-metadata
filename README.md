@@ -135,7 +135,7 @@ header.)*
 
 ## Development
 
-A native `node20` action: GitHub Actions runs `run.js` directly with the
+A native `node24` action: GitHub Actions runs `run.js` directly with the
 `node` runtime it provides, no install step, no runtime dependencies.
 Sanity-check changes locally, from inside a git checkout:
 
