@@ -152,7 +152,7 @@ for (const relpath of files) {
     let changed = false;
     const repoMarker = findRepoMarker(lines);
     if (!repoMarker) {
-        log.error({
+        log.warn({
             file: relpath,
             title: "Repo line not found",
             message: ""
@@ -185,7 +185,7 @@ for (const relpath of files) {
     // Filepath
     const pathMarker = findPathMarker(lines);
     if (!pathMarker) {
-        log.error({
+        log.warn({
             file: relpath,
             title: "Path line not found",
             message: ""
