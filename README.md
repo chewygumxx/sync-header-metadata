@@ -9,14 +9,14 @@
    -->
 
 <!--
-   - [GitHub Action] Checks/rewrites the "~owner/repo.git" and
+   - Checks/rewrites the "~owner/repo.git" and
    - "::: :/<path>" lines in tracked files' header banners against each
    - file's actual repository and path.
    -->
 
 # sync-header-metadata
 
-A GitHub Action that keeps a file-header convention honest.
+A GitHub Action (and local CLI) that keeps a file-header convention honest.
 
 Checks/rewrites the `~owner/repo.git` and `::: :/<path>` lines in tracked files'
 header banners against each file's actual repository and path.
@@ -91,6 +91,32 @@ For complete, worked examples. See:
 | `mode`       | No       | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place.     |
 | `verbose`    | No       | `false`   | Enable INFO-level logging.                                        |
 | `annotation` | No       | `false`   | Emit `::notice::`/`::warning::`/`::error::` workflow annotations. |
+
+### Local usage
+
+The same checks run from any local checkout, straight from this repository:
+
+```sh
+npx github:chewygumxx/sync-header-metadata                 # verify
+npx github:chewygumxx/sync-header-metadata --mode update   # rewrite in place
+```
+
+| Option                       | Default   | Description                                                   |
+|------------------------------|-----------|---------------------------------------------------------------|
+| `-m`, `--mode <mode>`        | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place. |
+| `-r`, `--repo <owner/repo>`  | See below | Repository the `~owner/repo.git` line is checked against.     |
+| `-v`, `--verbose`            | Off       | Enable INFO-level logging.                                    |
+| `-h`, `--help`               |           | Show usage.                                                   |
+
+Without `--repo`, the repository is taken from `$GITHUB_REPOSITORY` if set,
+otherwise from the `origin` remote's URL. Workflow annotations are never
+emitted locally.
+
+To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook:
+
+```sh
+npx --yes github:chewygumxx/sync-header-metadata --mode verify
+```
 
 ### Ignoring files
 

@@ -347,3 +347,107 @@ test('a missing header emits ::warning:: (not ::error::) and does not fail verif
     assert.match(result.stdout, /::warning title=Path line not found,file=plain\.txt::/);
     assert.doesNotMatch(result.stdout, /::error/);
 });
+
+
+// -----
+// CLI
+// -----
+
+const CLI_JS = path.join(__dirname, '..', 'bin', 'sync-header-metadata.js');
+
+// GITHUB_REPOSITORY is stripped so the CLI's own repository resolution
+// (--repo, then the origin remote) is what's under test.
+function runCli(dir, args = [], env = {}) {
+    const cliEnv = { ...process.env, ...env };
+    delete cliEnv.GITHUB_REPOSITORY;
+    return spawnSync(process.execPath, [CLI_JS, ...args], {
+        cwd:      dir,
+        encoding: 'utf8',
+        env:      cliEnv,
+    });
+}
+
+function setOrigin(dir, url) {
+    execFileSync('git', ['remote', 'add', 'origin', url], { cwd: dir });
+}
+
+for (const url of [
+    'git@github.com:owner/repo.git',
+    'https://github.com/owner/repo.git',
+    'https://github.com/owner/repo',
+    'ssh://git@github.com/owner/repo.git',
+]) {
+    test(`cli derives the repository from an origin remote of ${url}`, (t) => {
+        const dir = makeRepo();
+        t.after(() => cleanup(dir));
+
+        setOrigin(dir, url);
+        writeFile(dir, 'foo.js', header({ repo: 'owner/repo', filepath: '/foo.js' }));
+        gitAdd(dir);
+
+        const result = runCli(dir);
+        assert.equal(result.status, 0, result.stdout);
+    });
+}
+
+test('cli --repo overrides the origin remote', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    setOrigin(dir, 'git@github.com:someone/else.git');
+    writeFile(dir, 'foo.js', header({ repo: 'owner/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    assert.equal(runCli(dir).status, 1);
+    assert.equal(runCli(dir, ['--repo', 'owner/repo']).status, 0);
+});
+
+test('cli --mode update rewrites drifted header lines', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'wrong/repo', filepath: '/stale/path.js' }));
+    gitAdd(dir);
+
+    const result = runCli(dir, ['--repo', 'owner/repo', '--mode', 'update']);
+    assert.equal(result.status, 0);
+
+    const content = readFile(dir, 'foo.js');
+    assert.match(content, /~owner\/repo\.git/);
+    assert.match(content, /::: :\/foo\.js/);
+});
+
+test('cli verify fails on drift and prints no workflow-command lines', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'wrong/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    const result = runCli(dir, ['--repo', 'owner/repo']);
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /Repo line out-of-sync/);
+    assert.doesNotMatch(result.stdout, /::(error|warning|notice)\b/);
+});
+
+test('cli fails clearly, without workflow commands, when no repository can be resolved', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    writeFile(dir, 'foo.js', header({ repo: 'owner/repo', filepath: '/foo.js' }));
+    gitAdd(dir);
+
+    const result = runCli(dir);
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /\[FATAL\].*--repo/);
+    assert.doesNotMatch(result.stdout, /::error/);
+});
+
+test('cli rejects an invalid --mode', (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    const result = runCli(dir, ['--repo', 'owner/repo', '--mode', 'bogus']);
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /Invalid mode/);
+});

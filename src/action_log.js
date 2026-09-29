@@ -71,7 +71,8 @@ class ActionLog {
     }
     fatal(message, code = 1) {
         output('fatal', message);
-        annotate('error', { title: `[FATAL] ${message}`, message: `[FATAL] ${message}` });
+        if (this.annotation)
+            annotate('error', { title: `[FATAL] ${message}`, message: `[FATAL] ${message}` });
         process.exit(typeof code === 'number' ? code : 1);
     }
 }
