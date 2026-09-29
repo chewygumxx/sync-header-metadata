@@ -94,12 +94,16 @@ For complete, worked examples. See:
 
 ### Local usage
 
-The same checks run from any local checkout, straight from this repository:
+The same checks run from any local checkout, straight from this repository.
+Requires Node.js 24 and `git` on `PATH`.
 
 ```sh
-npx --allow-git=all github:chewygumxx/sync-header-metadata                 # verify
-npx --allow-git=all github:chewygumxx/sync-header-metadata --mode update   # rewrite in place
+npx --allow-git=all github:chewygumxx/sync-header-metadata#v2                 # verify
+npx --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode update   # rewrite in place
 ```
+
+As with the action, `#v2` tracks the latest `v2.x.y` release; pin an exact
+tag (e.g. `#v2.2.0`) for reproducibility.
 
 npm 12+ refuses git-hosted packages by default (`allow-git=none`), hence
 `--allow-git=all`; set it once with `npm config set allow-git all` to omit it.
@@ -115,11 +119,25 @@ Without `--repo`, the repository is taken from `$GITHUB_REPOSITORY` if set,
 otherwise from the `origin` remote's URL. Workflow annotations are never
 emitted locally.
 
-To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook:
+Only files in git's index are checked (`git ls-files`), exactly as in CI. A
+new file isn't checked until it's been `git add`ed; untracked files are
+skipped without warning.
+
+To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook
+(staged files are in the index, so they're covered):
 
 ```sh
-npx --yes --allow-git=all github:chewygumxx/sync-header-metadata --mode verify
+npx --yes --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode verify
 ```
+
+### Exit codes
+
+| Code  | Meaning                                                                    |
+|-------|----------------------------------------------------------------------------|
+| `0`   | `verify` passed, or `update` completed.                                    |
+| `1`   | `verify` found drift, or a fatal error (e.g. invalid mode, no repository). |
+| `2`   | Invalid command-line arguments (CLI only).                                 |
+| `127` | `git` not found on `PATH`.                                                 |
 
 ### Ignoring files
 
@@ -223,12 +241,21 @@ what the triggering commit touched, so the use case matters:
 
 ## Development
 
-A native `node24` action: GitHub Actions runs `run.js` directly with the
-`node` runtime it provides, no install step, no runtime dependencies.
+A native `node24` action with no install step and no runtime dependencies.
+Both entry points are thin wrappers around the same logic:
+
+| File                          | Role                                                            |
+|-------------------------------|-----------------------------------------------------------------|
+| `src/sync.js`                 | Core: resolves tracked files, checks/rewrites headers.          |
+| `run.js`                      | Action entry: reads `INPUT_*` and `GITHUB_REPOSITORY`.          |
+| `bin/sync-header-metadata.js` | CLI entry: reads flags, falls back to the `origin` remote.      |
+| `src/action_log.js`           | Logging and `::error::`-style workflow-command annotations.     |
+
 Sanity-check changes locally, from inside a git checkout:
 
 ```sh
-INPUT_MODE=verify GITHUB_REPOSITORY=owner/repo node run.js
+node bin/sync-header-metadata.js --verbose   # run the CLI against this repo
+npm test                                     # both entry points, in throwaway repos
 ```
 
 ## License
