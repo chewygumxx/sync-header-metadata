@@ -97,9 +97,12 @@ For complete, worked examples. See:
 The same checks run from any local checkout, straight from this repository:
 
 ```sh
-npx github:chewygumxx/sync-header-metadata                 # verify
-npx github:chewygumxx/sync-header-metadata --mode update   # rewrite in place
+npx --allow-git=all github:chewygumxx/sync-header-metadata                 # verify
+npx --allow-git=all github:chewygumxx/sync-header-metadata --mode update   # rewrite in place
 ```
+
+npm 12+ refuses git-hosted packages by default (`allow-git=none`), hence
+`--allow-git=all`; set it once with `npm config set allow-git all` to omit it.
 
 | Option                       | Default   | Description                                                   |
 |------------------------------|-----------|---------------------------------------------------------------|
@@ -115,7 +118,7 @@ emitted locally.
 To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook:
 
 ```sh
-npx --yes github:chewygumxx/sync-header-metadata --mode verify
+npx --yes --allow-git=all github:chewygumxx/sync-header-metadata --mode verify
 ```
 
 ### Ignoring files
