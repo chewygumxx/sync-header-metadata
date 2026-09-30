@@ -12,7 +12,7 @@ name: Sync Header Metadata
 description: >-
     Checks and updates the "~owner/repo.git" and "::: :/<path>" header lines in tracked files.
 branding:
-    icon:  edit-3
+    icon: edit-3
     color: black
 
 inputs:
@@ -20,17 +20,17 @@ inputs:
         description: |
             verify - Fail if any header line out-of-sync. (Default)
             update - Update out-of-sync header lines
-        required:    false
-        default:     verify
+        required: false
+        default: verify
     verbose:
         description: Enable INFO-level logging.
-        required:    false
-        default:    'false'
+        required: false
+        default: "false"
     annotation:
         description: Enable annotation.
-        required:    false
-        default:    'false'
+        required: false
+        default: "false"
 
 runs:
     using: node24
-    main:  run.js
+    main: run.js

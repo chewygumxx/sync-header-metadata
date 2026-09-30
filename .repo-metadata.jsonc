@@ -10,19 +10,19 @@
 
 {
     "$schema": "https://raw.githubusercontent.com/chewygumxx/sync-repo-metadata/refs/tags/v2/schema.json",
-    "name":  "sync-header-metadata",
+    "name": "sync-header-metadata",
     "owner": "chewygumxx",
-    "slug":  "chewygumxx/sync-header-metadata",
+    "slug": "chewygumxx/sync-header-metadata",
     "default_branch": "main",
     "description": "[GitHub Action] Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files to match the repository and path each file actually has.",
     "category": "github-actions",
-    "topics": [ "github-actions", "metadata", "repository" ],
+    "topics": ["github-actions", "metadata", "repository"],
     "language": "javascript",
     "immutable_releases": true,
     "license": {
-        "filepath":  "./LICENSE",
-        "spdx_id":   "GPL-3.0-only",
+        "filepath": "./LICENSE",
+        "spdx_id": "GPL-3.0-only",
         "full_name": "GNU General Public License v3.0 only",
-        "url":       "https://spdx.org/licenses/GPL-3.0-only"
+        "url": "https://spdx.org/licenses/GPL-3.0-only"
     }
 }
