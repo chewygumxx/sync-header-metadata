@@ -26,6 +26,7 @@ in the tracked files of the current git repository.
 Options:
   -m, --mode <verify|update>  verify: fail if any header line is out-of-sync (default)
                               update: rewrite out-of-sync header lines
+  -u, --update                Shorthand for --mode update
   -r, --repo <owner/repo>     Repository to sync against
                               (default: $GITHUB_REPOSITORY, then the origin remote)
   -v, --verbose               Enable INFO-level logging
@@ -39,7 +40,10 @@ let args;
 try {
     ({ values: args } = parseArgs({
         options: {
-            mode: { type: "string", short: "m", default: "verify" },
+            // No default: --update must be able to tell an explicit
+            // `--mode verify` (a contradiction) from an omitted --mode.
+            mode: { type: "string", short: "m" },
+            update: { type: "boolean", short: "u", default: false },
             repo: { type: "string", short: "r" },
             verbose: { type: "boolean", short: "v", default: false },
             help: { type: "boolean", short: "h", default: false },
@@ -47,6 +51,13 @@ try {
     }));
 } catch (err) {
     console.error(`${err.message}\n\n${USAGE}`);
+    process.exit(2);
+}
+
+if (args.update && args.mode && args.mode.toLowerCase() !== "update") {
+    console.error(
+        `Option '--update' conflicts with '--mode ${args.mode}'\n\n${USAGE}`,
+    );
     process.exit(2);
 }
 
@@ -58,7 +69,7 @@ if (args.help) {
 // Annotations are GitHub workflow commands; they are only noise in a terminal.
 const log = new ActionLog(args.verbose, false);
 
-const mode = args.mode.toLowerCase();
+const mode = args.update ? "update" : (args.mode ?? "verify").toLowerCase();
 if (mode !== "verify" && mode !== "update")
     log.fatal(
         `Invalid mode: Must be 'verify' or 'update', received: ${args.mode}`,

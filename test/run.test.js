@@ -538,6 +538,61 @@ test("cli --mode update rewrites drifted header lines", (t) => {
     assert.match(content, /::: :\/foo\.js/);
 });
 
+for (const flag of ["--update", "-u"]) {
+    test(`cli ${flag} is shorthand for --mode update`, (t) => {
+        const dir = makeRepo();
+        t.after(() => cleanup(dir));
+
+        writeFile(
+            dir,
+            "foo.js",
+            header({ repo: "wrong/repo", filepath: "/stale/path.js" }),
+        );
+        gitAdd(dir);
+
+        const result = runCli(dir, ["--repo", "owner/repo", flag]);
+        assert.equal(result.status, 0);
+
+        const content = readFile(dir, "foo.js");
+        assert.match(content, /~owner\/repo\.git/);
+        assert.match(content, /::: :\/foo\.js/);
+    });
+}
+
+test("cli --update agrees with an explicit --mode update", (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    const result = runCli(dir, [
+        "--repo",
+        "owner/repo",
+        "--mode",
+        "update",
+        "--update",
+    ]);
+    assert.equal(result.status, 0);
+});
+
+test("cli rejects --update combined with --mode verify, and writes nothing", (t) => {
+    const dir = makeRepo();
+    t.after(() => cleanup(dir));
+
+    const original = header({ repo: "wrong/repo", filepath: "/foo.js" });
+    writeFile(dir, "foo.js", original);
+    gitAdd(dir);
+
+    const result = runCli(dir, [
+        "--repo",
+        "owner/repo",
+        "--mode",
+        "verify",
+        "--update",
+    ]);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /--update/);
+    assert.equal(readFile(dir, "foo.js"), original);
+});
+
 test("cli verify fails on drift and prints no workflow-command lines", (t) => {
     const dir = makeRepo();
     t.after(() => cleanup(dir));
