@@ -87,7 +87,7 @@ For complete, worked examples. See:
 ### Inputs
 
 | Input        | Required | Default   | Description                                                       |
-|--------------|----------|-----------|-------------------------------------------------------------------|
+| ------------ | -------- | --------- | ----------------------------------------------------------------- |
 | `mode`       | No       | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place.     |
 | `verbose`    | No       | `false`   | Enable INFO-level logging.                                        |
 | `annotation` | No       | `false`   | Emit `::notice::`/`::warning::`/`::error::` workflow annotations. |
@@ -109,7 +109,7 @@ npm 12+ refuses git-hosted packages by default (`allow-git=none`), hence
 `--allow-git=all`; set it once with `npm config set allow-git all` to omit it.
 
 | Option                       | Default   | Description                                                   |
-|------------------------------|-----------|---------------------------------------------------------------|
+| ---------------------------- | --------- | ------------------------------------------------------------- |
 | `-m`, `--mode <mode>`        | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place. |
 | `-r`, `--repo <owner/repo>`  | See below | Repository the `~owner/repo.git` line is checked against.     |
 | `-v`, `--verbose`            | Off       | Enable INFO-level logging.                                    |
@@ -133,7 +133,7 @@ npx --yes --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode verif
 ### Exit codes
 
 | Code  | Meaning                                                                    |
-|-------|----------------------------------------------------------------------------|
+| ----- | -------------------------------------------------------------------------- |
 | `0`   | `verify` passed, or `update` completed.                                    |
 | `1`   | `verify` found drift, or a fatal error (e.g. invalid mode, no repository). |
 | `2`   | Invalid command-line arguments (CLI only).                                 |
@@ -176,8 +176,8 @@ go.sum           -sync-header-metadata
 ```
 
 These are loaded at the lowest precedence, so they never need to be declared
-in your own `.gitattributes`. Any matching line in your repo — set or
-unset — always overrides a default, e.g. to re-enable syncing for one JSON
+in your own `.gitattributes`. Any matching line in your repo (set or
+unset) always overrides a default, e.g. to re-enable syncing for one JSON
 file despite the blanket `*.json` default:
 
 ```gitattributes
@@ -245,7 +245,7 @@ A native `node24` action with no install step and no runtime dependencies.
 Both entry points are thin wrappers around the same logic:
 
 | File                          | Role                                                            |
-|-------------------------------|-----------------------------------------------------------------|
+| ----------------------------- | --------------------------------------------------------------- |
 | `src/sync.js`                 | Core: resolves tracked files, checks/rewrites headers.          |
 | `run.js`                      | Action entry: reads `INPUT_*` and `GITHUB_REPOSITORY`.          |
 | `bin/sync-header-metadata.js` | CLI entry: reads flags, falls back to the `origin` remote.      |

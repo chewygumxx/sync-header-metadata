@@ -1,29 +1,57 @@
 {
-  "name": "sync-header-metadata",
-  "description": "Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files.",
-  "version": "2.2.0",
-  "license": "GPL-3.0-only",
-  "bin": {
-    "sync-header-metadata": "bin/sync-header-metadata.js"
-  },
-  "keywords": [
-    "github-actions",
-    "repository",
-    "metadata"
-  ],
-  "engines": {
-    "node": "24.x"
-  },
-  "scripts": {
-    "prepare": "test -d node_modules/husky && husky || true",
-    "test": "node --test"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.9.1",
-    "globals": "^17.12.0",
-    "husky": "^9.1.7"
-  }
+    "name": "sync-header-metadata",
+    "description": "Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files.",
+    "version": "2.2.0",
+    "license": "GPL-3.0-only",
+    "bin": {
+        "sync-header-metadata": "bin/sync-header-metadata.js"
+    },
+    "keywords": [
+        "github-actions",
+        "repository",
+        "metadata"
+    ],
+    "engines": {
+        "node": "24.x"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.5.14",
+        "@chewygumxx/biome-config": "^1.0.0",
+        "@chewygumxx/commitlint-config": "^1.0.0",
+        "@chewygumxx/cz-commitlint": "^1.0.2",
+        "@chewygumxx/remark-preset": "^1.0.3",
+        "@chewygumxx/yamllint-config": "^1.0.0",
+        "@commitlint/cli": "^21.2.2",
+        "@types/node": "^24.19.0",
+        "commitizen": "^4.3.2",
+        "husky": "^9.1.7",
+        "prettier": "^3.9.9",
+        "remark-cli": "^12.0.1",
+        "typescript": "^7.0.2"
+    },
+    "scripts": {
+        "check": "npm run typecheck && npm run lint:biome && npm run lint:md && npm run lint:yaml && npm run lint:emdash && npm test",
+        "commit": "cz",
+        "format": "biome format --write . && npm run format:yaml",
+        "format:check": "biome format .",
+        "format:yaml": "git ls-files -z '*.yaml' '*.yml' | xargs -0 -r prettier --write --log-level warn",
+        "lint": "biome lint .",
+        "lint:biome": "biome ci .",
+        "lint:emdash": "git grep -nIP --untracked '\\x{2014}'; test $? -eq 1",
+        "lint:md": "git ls-files -z '*.md' | xargs -0 -r remark --frail --quiet --no-stdout",
+        "lint:yaml": "git ls-files -z '*.yaml' '*.yml' | xargs -0 -r prettier --check && git ls-files -z '*.yaml' '*.yml' | xargs -0 -r yamllint --strict",
+        "prepare": "test -d node_modules/husky && husky || true",
+        "test": "node --test",
+        "typecheck": "tsc"
+    },
+    "config": {
+        "commitizen": {
+            "path": "@chewygumxx/cz-commitlint"
+        }
+    },
+    "remarkConfig": {
+        "plugins": [
+            "@chewygumxx/remark-preset"
+        ]
+    }
 }
