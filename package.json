@@ -3,16 +3,32 @@
     "description": "Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files.",
     "version": "2.2.0",
     "license": "GPL-3.0-only",
+    "keywords": [
+        "cli",
+        "github-actions",
+        "header",
+        "metadata",
+        "repository"
+    ],
+    "homepage": "https://github.com/chewygumxx/sync-header-metadata#readme",
+    "bugs": "https://github.com/chewygumxx/sync-header-metadata/issues",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/chewygumxx/sync-header-metadata.git"
+    },
     "bin": {
         "sync-header-metadata": "bin/sync-header-metadata.js"
     },
-    "keywords": [
-        "github-actions",
-        "repository",
-        "metadata"
+    "files": [
+        "bin/",
+        "src/",
+        "default.gitattributes"
     ],
     "engines": {
-        "node": "24.x"
+        "node": ">=24"
+    },
+    "publishConfig": {
+        "provenance": true
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.14",
