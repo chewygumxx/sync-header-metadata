@@ -104,7 +104,7 @@ npx sync-header-metadata --update   # rewrite in place
 ```
 
 Pin a major (`sync-header-metadata@2`) or an exact version
-(`sync-header-metadata@2.2.0`) for reproducibility; npm versions match the
+(`sync-header-metadata@2.3.0`) for reproducibility; npm versions match the
 action's `vX.Y.Z` release tags.
 
 | Option                       | Default   | Description                                                   |
