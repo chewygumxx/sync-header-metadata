@@ -80,9 +80,9 @@ To rewrite and update files instead of failing on desync:
       commit_message: "chore: Sync header metadata"
 ```
 
-For complete, worked examples. See:
-- [`.github/workflows/verify-header-metadata.yaml`](.github/workflows/verify-header-metadata.yaml)
-- [`.github/workflows/update-header-metadata.yaml`](.github/workflows/update-header-metadata.yaml)
+For a complete, worked example, see the reusable
+[`sync-header-metadata.yaml`](https://github.com/chewygumxx/.github/blob/v1/.github/workflows/sync-header-metadata.yaml)
+workflow in `chewygumxx/.github`, which this repository's CI calls.
 
 ### Inputs
 
