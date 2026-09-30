@@ -1,7 +1,7 @@
 {
     "name": "sync-header-metadata",
     "description": "Checks and updates the \"~owner/repo.git\" and \"::: :/<path>\" header lines in tracked files.",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "license": "GPL-3.0-only",
     "keywords": [
         "cli",
