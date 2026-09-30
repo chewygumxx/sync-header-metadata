@@ -9,13 +9,13 @@
 //
 //
 
-'use strict';
+"use strict";
 
-const { parseArgs }    = require('node:util');
-const { execFileSync } = require('node:child_process');
+const { parseArgs } = require("node:util");
+const { execFileSync } = require("node:child_process");
 
-const ActionLog = require('../src/action_log.js');
-const { sync }  = require('../src/sync.js');
+const ActionLog = require("../src/action_log.js");
+const { sync } = require("../src/sync.js");
 
 const USAGE = `\
 Usage: sync-header-metadata [options]
@@ -31,7 +31,6 @@ Options:
   -v, --verbose               Enable INFO-level logging
   -h, --help                  Show this help`;
 
-
 // ----------------
 // Parse Arguments
 // ----------------
@@ -40,10 +39,10 @@ let args;
 try {
     ({ values: args } = parseArgs({
         options: {
-            mode:    { type: 'string',  short: 'm', default: 'verify' },
-            repo:    { type: 'string',  short: 'r' },
-            verbose: { type: 'boolean', short: 'v', default: false },
-            help:    { type: 'boolean', short: 'h', default: false },
+            mode: { type: "string", short: "m", default: "verify" },
+            repo: { type: "string", short: "r" },
+            verbose: { type: "boolean", short: "v", default: false },
+            help: { type: "boolean", short: "h", default: false },
         },
     }));
 } catch (err) {
@@ -60,9 +59,10 @@ if (args.help) {
 const log = new ActionLog(args.verbose, false);
 
 const mode = args.mode.toLowerCase();
-if (mode !== 'verify' && mode !== 'update')
-    log.fatal(`Invalid mode: Must be 'verify' or 'update', received: ${args.mode}`);
-
+if (mode !== "verify" && mode !== "update")
+    log.fatal(
+        `Invalid mode: Must be 'verify' or 'update', received: ${args.mode}`,
+    );
 
 // -------------------
 // Resolve Repository
@@ -70,13 +70,14 @@ if (mode !== 'verify' && mode !== 'update')
 
 // Accepts the scp-like (git@host:owner/repo.git) and URL
 // (https://host/owner/repo, ssh://git@host/owner/repo.git) remote forms.
-const REMOTE_RE = /^(?:[a-z+]+:\/\/[^/]+\/|[^@/]+@[^:]+:)(\S+?\/[^/\s]+?)(?:\.git)?\/?$/;
+const REMOTE_RE =
+    /^(?:[a-z+]+:\/\/[^/]+\/|[^@/]+@[^:]+:)(\S+?\/[^/\s]+?)(?:\.git)?\/?$/;
 function repoFromOrigin() {
     let url;
     try {
-        url = execFileSync('git', ['remote', 'get-url', 'origin'], {
-            encoding: 'utf8',
-            stdio:    ['ignore', 'pipe', 'ignore'],
+        url = execFileSync("git", ["remote", "get-url", "origin"], {
+            encoding: "utf8",
+            stdio: ["ignore", "pipe", "ignore"],
         }).trim();
     } catch {
         return null;
@@ -85,10 +86,12 @@ function repoFromOrigin() {
     return m ? m[1] : null;
 }
 
-const repository = args.repo || process.env.GITHUB_REPOSITORY || repoFromOrigin();
+const repository =
+    args.repo || process.env.GITHUB_REPOSITORY || repoFromOrigin();
 if (!repository)
-    log.fatal('Could not resolve repository from the origin remote: Pass --repo <owner/repo>');
-
+    log.fatal(
+        "Could not resolve repository from the origin remote: Pass --repo <owner/repo>",
+    );
 
 // ----
 // Run

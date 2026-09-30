@@ -8,8 +8,12 @@
 #
 #
 
-env*
+.env*
 *.local.*
-/node_modules/
 
+node_modules/
 /.herdr/
+/.claude/worktrees/
+
+/.remember/
+/.superpowers/

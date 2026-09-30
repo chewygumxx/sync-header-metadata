@@ -1,0 +1,29 @@
+# vim:set expandtab shiftwidth=4 filetype=yaml foldlevel=3:
+# SPDX-License-Identifier: GPL-3.0-only
+
+#
+#
+# ~chewygumxx/sync-header-metadata.git
+# ::: :/.github/dependabot.yml
+#
+#
+
+version: 2
+updates:
+    - package-ecosystem: npm
+      directory: /
+      schedule:
+          interval: weekly
+      commit-message:
+          prefix: build
+      ignore:
+          # Its majors follow Node's; bumped by hand with the Node floor.
+          - dependency-name: "@types/node"
+            update-types: ["version-update:semver-major"]
+
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
+      commit-message:
+          prefix: ci

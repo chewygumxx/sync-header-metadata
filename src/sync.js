@@ -8,11 +8,11 @@
 //
 //
 
-'use strict';
+"use strict";
 
-const fs               = require('node:fs');
-const path             = require('node:path');
-const { execFileSync } = require('node:child_process');
+const fs = require("node:fs");
+const path = require("node:path");
+const { execFileSync } = require("node:child_process");
 
 // A file opts out of header syncing by explicitly unsetting the
 // 'sync-header-metadata' boolean attribute in .gitattributes, e.g.:
@@ -22,8 +22,12 @@ const { execFileSync } = require('node:child_process');
 // *.json, etc.) via `core.attributesFile`, which git consults only as a
 // last resort. Any matching line in the repo's own .gitattributes/
 // info/attributes always takes precedence over it.
-const ATTR = 'sync-header-metadata';
-const DEFAULT_ATTRIBUTES_FILE = path.join(__dirname, '..', 'default.gitattributes');
+const ATTR = "sync-header-metadata";
+const DEFAULT_ATTRIBUTES_FILE = path.join(
+    __dirname,
+    "..",
+    "default.gitattributes",
+);
 
 // ------------------------------
 // Helpers: Resolve Header Lines
@@ -32,11 +36,12 @@ const DEFAULT_ATTRIBUTES_FILE = path.join(__dirname, '..', 'default.gitattribute
 function findRepoMarker(lines) {
     for (let i = 0; i < lines.length; i++) {
         const m = REPO_MARKER_RE.exec(lines[i]);
-        if (m) return {
-            index: i,
-            splitAt: m.index,
-            current: m[1]
-        };
+        if (m)
+            return {
+                index: i,
+                splitAt: m.index,
+                current: m[1],
+            };
     }
     return null;
 }
@@ -46,75 +51,97 @@ const PATH_MARKER_RE = / ::: :(\/\S*)\s*$/;
 function findPathMarker(lines) {
     for (let i = 0; i < lines.length; i++) {
         const m = PATH_MARKER_RE.exec(lines[i]);
-        if (m) return {
-            index:   i,
-            splitAt: m.index + m[0].indexOf(m[1]),
-            current: m[1]
-        };
+        if (m)
+            return {
+                index: i,
+                splitAt: m.index + m[0].indexOf(m[1]),
+                current: m[1],
+            };
     }
     return null;
 }
 
-
 // Shared by the Action (run.js) and the CLI (bin/sync-header-metadata.js);
 // each entry point resolves its own inputs and exits with the returned code.
 function sync({ mode, repository, log, cwd = process.cwd() }) {
-    const verify = mode === 'verify';
+    const verify = mode === "verify";
 
     // ------------------------
     // Helper: Resolve Tracked
     // ------------------------
 
     try {
-        execFileSync('git', ['--version'], { stdio: 'ignore' });
+        execFileSync("git", ["--version"], { stdio: "ignore" });
     } catch {
-        log.fatal('Dependency not found in PATH: git', 127);
+        log.fatal("Dependency not found in PATH: git", 127);
     }
 
     let repoRoot;
     try {
-        repoRoot = execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+        repoRoot = execFileSync(
+            "git",
+            ["-C", cwd, "rev-parse", "--show-toplevel"],
+            { encoding: "utf8" },
+        ).trim();
     } catch {
-        log.fatal('Not inside a git repository');
+        log.fatal("Not inside a git repository");
     }
 
     let fileListRaw;
     try {
-        fileListRaw = execFileSync('git', ['-C', repoRoot, 'ls-files', '-z'], { encoding: 'utf8' });
+        fileListRaw = execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], {
+            encoding: "utf8",
+        });
     } catch (err) {
         log.fatal(`Failed to list tracked files: ${err.message}`);
     }
-    const allFiles = fileListRaw.split('\0').filter(Boolean);
+    const allFiles = fileListRaw.split("\0").filter(Boolean);
 
-    let checkAttrRaw = '';
+    let checkAttrRaw = "";
     if (allFiles.length > 0) {
         checkAttrRaw = execFileSync(
-            'git',
-            ['-c', `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`, '-C', repoRoot, 'check-attr', '-z', '--stdin', ATTR],
-            { input: allFiles.join('\0'), encoding: 'utf8' }
+            "git",
+            [
+                "-c",
+                `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`,
+                "-C",
+                repoRoot,
+                "check-attr",
+                "-z",
+                "--stdin",
+                ATTR,
+            ],
+            { input: allFiles.join("\0"), encoding: "utf8" },
         );
     }
-    const attrParts = checkAttrRaw.split('\0');
+    const attrParts = checkAttrRaw.split("\0");
     attrParts.pop();
     const ignored = new Set();
     for (let i = 0; i < attrParts.length; i += 3) {
-        if (attrParts[i + 2] === 'unset') ignored.add(attrParts[i]);
+        if (attrParts[i + 2] === "unset") ignored.add(attrParts[i]);
     }
-    const files = allFiles.filter(f => !ignored.has(f));
+    const files = allFiles.filter((f) => !ignored.has(f));
 
     if (files.length === 0) {
-        log.warn({ title: "Nothing Found", message: "No tracked files found in repository" });
+        log.warn({
+            title: "Nothing Found",
+            message: "No tracked files found in repository",
+        });
         return 0;
     }
-
 
     // ------------
     // Parse Files
     // ------------
 
-    let      parsed = 0,  unreadable = 0;
-    let repoUpdated = 0, repoCorrect = 0, repoNotFound = 0;
-    let pathUpdated = 0, pathCorrect = 0, pathNotFound = 0;
+    let parsed = 0,
+        unreadable = 0;
+    let repoUpdated = 0,
+        repoCorrect = 0,
+        repoNotFound = 0;
+    let pathUpdated = 0,
+        pathCorrect = 0,
+        pathNotFound = 0;
 
     for (const relpath of files) {
         const filePath = `${repoRoot}/${relpath}`;
@@ -123,18 +150,18 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         // Read
         let content;
         try {
-            content = fs.readFileSync(filePath, 'utf8');
+            content = fs.readFileSync(filePath, "utf8");
             parsed++;
         } catch {
             log.warn({
                 file: relpath,
                 title: "Failed to read file as utf8 encoded",
-                message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\` `
+                message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\` `,
             });
             unreadable++;
             continue;
         }
-        const eol   = content.includes('\r\n') ? '\r\n' : '\n';
+        const eol = content.includes("\r\n") ? "\r\n" : "\n";
         const lines = content.split(/\r\n|\n/);
 
         // Repository
@@ -144,7 +171,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
             log.warn({
                 file: relpath,
                 title: "Repo line not found",
-                message: ""
+                message: "",
             });
             repoNotFound++;
         } else if (repoMarker.current === repository) {
@@ -155,8 +182,8 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 file: relpath,
                 title: "Repo line out-of-sync",
                 message: `${repoMarker.current} =/= ${repository}`,
-                startLine: repoMarker.index + 1
-            })
+                startLine: repoMarker.index + 1,
+            });
             repoUpdated++;
         } else {
             const leader = lines[repoMarker.index].slice(0, repoMarker.splitAt);
@@ -166,8 +193,8 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 file: relpath,
                 title: "Repo line updated",
                 message: `${repoMarker.current} -> ${repository}`,
-                startLine: repoMarker.index + 1
-            })
+                startLine: repoMarker.index + 1,
+            });
             repoUpdated++;
         }
 
@@ -177,7 +204,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
             log.warn({
                 file: relpath,
                 title: "Path line not found",
-                message: ""
+                message: "",
             });
             pathNotFound++;
         } else if (pathMarker.current === repoPath) {
@@ -188,8 +215,8 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 file: relpath,
                 title: "Path line out-of-sync",
                 message: `${pathMarker.current} =/= ${repoPath}`,
-                startLine: pathMarker.index + 1
-            })
+                startLine: pathMarker.index + 1,
+            });
             pathUpdated++;
         } else {
             const leader = lines[pathMarker.index].slice(0, pathMarker.splitAt);
@@ -199,8 +226,8 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 file: relpath,
                 title: "Path line updated",
                 message: `${pathMarker.current} -> ${repoPath}`,
-                startLine: pathMarker.index + 1
-            })
+                startLine: pathMarker.index + 1,
+            });
             pathUpdated++;
         }
 
@@ -210,15 +237,14 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         }
     }
 
-
     // ---------------
     // Post-Execution
     // ---------------
 
     const summary =
         `    Files parsed: ${parsed}\n` +
-        `    Repo line - ${verify ? 'Out-of-Sync' : 'Updated'}: ${repoUpdated}, Correct: ${repoCorrect}, Not found: ${repoNotFound}\n` +
-        `    Path line - ${verify ? 'Out-of-Sync' : 'Updated'}: ${pathUpdated}, Correct: ${pathCorrect}, Not found: ${pathNotFound}\n` +
+        `    Repo line - ${verify ? "Out-of-Sync" : "Updated"}: ${repoUpdated}, Correct: ${repoCorrect}, Not found: ${repoNotFound}\n` +
+        `    Path line - ${verify ? "Out-of-Sync" : "Updated"}: ${pathUpdated}, Correct: ${pathCorrect}, Not found: ${pathNotFound}\n` +
         `    Files unreadable: ${unreadable}`;
 
     let sumTitle;
