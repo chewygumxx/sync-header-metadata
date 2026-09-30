@@ -21,7 +21,7 @@
         "@chewygumxx/cz-commitlint": "^1.0.2",
         "@chewygumxx/remark-preset": "^1.0.3",
         "@chewygumxx/yamllint-config": "^1.0.0",
-        "@commitlint/cli": "^21.2.2",
+        "@commitlint/cli": "^21.2.3",
         "@types/node": "^24.19.0",
         "commitizen": "^4.3.2",
         "husky": "^9.1.7",
