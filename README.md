@@ -94,23 +94,23 @@ workflow in `chewygumxx/.github`, which this repository's CI calls.
 
 ### Local usage
 
-The same checks run from any local checkout, straight from this repository.
-Requires Node.js 24 and `git` on `PATH`.
+The same checks run from any local checkout via the
+[`sync-header-metadata`](https://www.npmjs.com/package/sync-header-metadata)
+npm package. Requires Node.js 24+ and `git` on `PATH`.
 
 ```sh
-npx --allow-git=all github:chewygumxx/sync-header-metadata#v2                 # verify
-npx --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode update   # rewrite in place
+npx sync-header-metadata            # verify
+npx sync-header-metadata --update   # rewrite in place
 ```
 
-As with the action, `#v2` tracks the latest `v2.x.y` release; pin an exact
-tag (e.g. `#v2.2.0`) for reproducibility.
-
-npm 12+ refuses git-hosted packages by default (`allow-git=none`), hence
-`--allow-git=all`; set it once with `npm config set allow-git all` to omit it.
+Pin a major (`sync-header-metadata@2`) or an exact version
+(`sync-header-metadata@2.2.0`) for reproducibility; npm versions match the
+action's `vX.Y.Z` release tags.
 
 | Option                       | Default   | Description                                                   |
 | ---------------------------- | --------- | ------------------------------------------------------------- |
 | `-m`, `--mode <mode>`        | `verify`  | `verify` exits non-zero on drift; `update` rewrites in place. |
+| `-u`, `--update`             | Off       | Shorthand for `--mode update`.                                |
 | `-r`, `--repo <owner/repo>`  | See below | Repository the `~owner/repo.git` line is checked against.     |
 | `-v`, `--verbose`            | Off       | Enable INFO-level logging.                                    |
 | `-h`, `--help`               |           | Show usage.                                                   |
@@ -127,7 +127,7 @@ To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook
 (staged files are in the index, so they're covered):
 
 ```sh
-npx --yes --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode verify
+npx --yes sync-header-metadata@2
 ```
 
 ### Exit codes
@@ -136,7 +136,7 @@ npx --yes --allow-git=all github:chewygumxx/sync-header-metadata#v2 --mode verif
 | ----- | -------------------------------------------------------------------------- |
 | `0`   | `verify` passed, or `update` completed.                                    |
 | `1`   | `verify` found drift, or a fatal error (e.g. invalid mode, no repository). |
-| `2`   | Invalid command-line arguments (CLI only).                                 |
+| `2`   | Invalid command-line arguments, e.g. `--update` with `--mode verify`.      |
 | `127` | `git` not found on `PATH`.                                                 |
 
 ### Ignoring files
