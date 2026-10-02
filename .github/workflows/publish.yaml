@@ -53,15 +53,17 @@ jobs:
               with:
                   persist-credentials: false
 
-            - name: Setup Node and NPM
+            - name: Setup Bun and Node
               uses: jdx/mise-action@v4
 
             - name: Verify Version
               env:
                   TAG: ${{ github.ref_name }}
               run: |
-                  actual=$(node -p "require('./package.json').version")
+                  actual=$(bun -p "require('./package.json').version")
                   test "v$actual" = "$TAG" || { echo "::error::package.json is $actual, tag says $TAG"; exit 1; }
 
+            # npm, from mise's Node: Bun cannot stage a publish or publish by
+            # trusted publishing.
             - name: Publish
               run: npm stage publish
