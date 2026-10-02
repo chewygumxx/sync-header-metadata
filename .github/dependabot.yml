@@ -8,9 +8,14 @@
 #
 #
 
+# Dependabot reads a bun.lock only up to lockfileVersion 1, and Bun 1.4
+# writes 2, so the bun entry fails until dependabot-core supports it
+# (https://github.com/dependabot/dependabot-core/pull/16071). It stays so
+# that updates resume then; github-actions is unaffected.
+
 version: 2
 updates:
-    - package-ecosystem: npm
+    - package-ecosystem: bun
       directory: /
       schedule:
           interval: weekly
