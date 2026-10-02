@@ -9,7 +9,7 @@
 #
 #
 
-# SessionStart. Installs this repository's npm devDependencies so husky's
+# SessionStart. Installs this repository's dependencies, with Bun, so husky's
 # git hooks are wired before anything else in the session runs.
 
 set -u
@@ -21,7 +21,7 @@ root=${CLAUDE_PROJECT_DIR:-}
 [ -n "$root" ] || exit 0
 
 [ -f "$root/package.json" ] || exit 0
-command -v npm >/dev/null 2>&1 || exit 0
+command -v bun >/dev/null 2>&1 || exit 0
 
 cd "$root" || exit 0
-npm ci --no-fund --no-audit >/dev/null
+bun install --frozen-lockfile >/dev/null
