@@ -96,11 +96,11 @@ workflow in `chewygumxx/.github`, which this repository's CI calls.
 
 The same checks run from any local checkout via the
 [`sync-header-metadata`](https://www.npmjs.com/package/sync-header-metadata)
-npm package. Requires Node.js 24+ and `git` on `PATH`.
+npm package. Requires Bun or Node.js 24+, and `git` on `PATH`.
 
 ```sh
-npx sync-header-metadata            # verify
-npx sync-header-metadata --update   # rewrite in place
+bunx sync-header-metadata            # verify
+bunx sync-header-metadata --update   # rewrite in place
 ```
 
 Pin a major (`sync-header-metadata@2`) or an exact version
@@ -127,7 +127,7 @@ To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook
 (staged files are in the index, so they're covered):
 
 ```sh
-npx --yes sync-header-metadata@2
+bunx sync-header-metadata@2
 ```
 
 ### Exit codes
@@ -254,8 +254,8 @@ Both entry points are thin wrappers around the same logic:
 Sanity-check changes locally, from inside a git checkout:
 
 ```sh
-node bin/sync-header-metadata.js --verbose   # run the CLI against this repo
-npm test                                     # both entry points, in throwaway repos
+bun bin/sync-header-metadata.js --verbose   # run the CLI against this repo
+bun run test                                # both entry points, in throwaway repos
 ```
 
 ## License
