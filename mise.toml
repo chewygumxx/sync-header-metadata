@@ -13,11 +13,11 @@
 #
 # The development toolchain for this repository, in one place.
 #
-# Everything the repository runs that is not an npm package lives here, so
+# Everything the repository runs that Bun does not install lives here, so
 # a checkout never depends on whatever the contributor happens to have on
-# `PATH`. npm packages (commitlint, Biome, remark, prettier, husky,
-# TypeScript) are pinned in `package.json` instead; together the two files
-# are the whole dependency surface. CI installs from this file via
+# `PATH`. Packages (commitlint, Biome, remark, prettier, husky, TypeScript)
+# are pinned in `package.json` and installed by Bun instead; together the
+# two files are the whole dependency surface. CI installs from this file via
 # `jdx/mise-action`, so the versions below are the ones CI runs.
 #
 # Backends are named explicitly rather than relying on the registry alias,
@@ -30,6 +30,11 @@ min_version = "2026.9.0"
 #
 # Runtimes
 #
+# Bun installs the packages and runs the scripts and tests. Node runs the
+# action, which GitHub can only run on Node, and npm publishes the CLI
+# (`npm stage publish`, which Bun cannot do).
+#
+bun  = "1.4"
 node = "24"
 
 #
@@ -44,7 +49,7 @@ node = "24"
 #
 # yamllint is a Python tool, installed with the uv pinned beside it. Its
 # rules come from `.yamllint.yaml`, which extends `@chewygumxx/yamllint-config`
-# in `package.json`; prettier, which formats YAML, is an npm package pinned
+# in `package.json`; prettier, which formats YAML, is a package pinned
 # there too.
 #
 "aqua:astral-sh/uv" = "0.12.19"

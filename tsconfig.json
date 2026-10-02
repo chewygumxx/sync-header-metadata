@@ -8,7 +8,7 @@
         "noEmit": true,
         "allowJs": true,
         "checkJs": true,
-        "types": ["node"],
+        "types": ["bun"],
         "skipLibCheck": true
     },
     "include": [".commitlintrc.mts"]
