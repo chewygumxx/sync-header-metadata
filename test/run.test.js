@@ -10,7 +10,7 @@
 
 "use strict";
 
-const test = require("node:test");
+const { onTestFinished, test } = require("bun:test");
 const assert = require("node:assert/strict");
 const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
@@ -86,9 +86,9 @@ function cleanup(dir) {
 // Tests
 // -------
 
-test("verify mode passes when both header lines are correct", (t) => {
+test("verify mode passes when both header lines are correct", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -101,9 +101,9 @@ test("verify mode passes when both header lines are correct", (t) => {
     assert.equal(result.status, 0);
 });
 
-test("verify mode fails, and writes nothing, when the repo line has drifted", (t) => {
+test("verify mode fails, and writes nothing, when the repo line has drifted", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     const original = header({ repo: "wrong/repo", filepath: "/foo.js" });
     writeFile(dir, "foo.js", original);
@@ -114,9 +114,9 @@ test("verify mode fails, and writes nothing, when the repo line has drifted", (t
     assert.equal(readFile(dir, "foo.js"), original);
 });
 
-test("verify mode fails when the path line has drifted", (t) => {
+test("verify mode fails when the path line has drifted", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -129,9 +129,9 @@ test("verify mode fails when the path line has drifted", (t) => {
     assert.equal(result.status, 1);
 });
 
-test("verify mode passes when the path line has trailing whitespace but is otherwise correct", (t) => {
+test("verify mode passes when the path line has trailing whitespace but is otherwise correct", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -148,9 +148,9 @@ test("verify mode passes when the path line has trailing whitespace but is other
     assert.equal(result.status, 0);
 });
 
-test("update mode rewrites a drifted repo line and leaves an already-correct path line as-is", (t) => {
+test("update mode rewrites a drifted repo line and leaves an already-correct path line as-is", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -167,9 +167,9 @@ test("update mode rewrites a drifted repo line and leaves an already-correct pat
     assert.match(content, /::: :\/foo\.js/);
 });
 
-test("update mode rewrites a drifted path line and leaves an already-correct repo line as-is", (t) => {
+test("update mode rewrites a drifted path line and leaves an already-correct repo line as-is", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -186,9 +186,9 @@ test("update mode rewrites a drifted path line and leaves an already-correct rep
     assert.match(content, /::: :\/foo\.js/);
 });
 
-test("update mode rewrites both lines when both have drifted", (t) => {
+test("update mode rewrites both lines when both have drifted", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -204,9 +204,9 @@ test("update mode rewrites both lines when both have drifted", (t) => {
     assert.match(content, /::: :\/foo\.js/);
 });
 
-test("files with no header banner are left alone and do not fail verification", (t) => {
+test("files with no header banner are left alone and do not fail verification", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(dir, "plain.txt", "just some text\nwith no markers at all\n");
     gitAdd(dir);
@@ -215,9 +215,9 @@ test("files with no header banner are left alone and do not fail verification", 
     assert.equal(result.status, 0);
 });
 
-test("CRLF line endings are preserved after an update rewrite", (t) => {
+test("CRLF line endings are preserved after an update rewrite", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -236,9 +236,9 @@ test("CRLF line endings are preserved after an update rewrite", (t) => {
     );
 });
 
-test("a file excluded via .gitattributes is ignored even when its header has drifted", (t) => {
+test("a file excluded via .gitattributes is ignored even when its header has drifted", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(dir, ".gitattributes", "foo.js -sync-header-metadata\n");
     writeFile(
@@ -252,9 +252,9 @@ test("a file excluded via .gitattributes is ignored even when its header has dri
     assert.equal(result.status, 0);
 });
 
-test("bundled default exclusions apply with no .gitattributes present in the repo at all", (t) => {
+test("bundled default exclusions apply with no .gitattributes present in the repo at all", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -282,9 +282,9 @@ test("bundled default exclusions apply with no .gitattributes present in the rep
     assert.equal(result.status, 0);
 });
 
-test("a repo .gitattributes can re-enable syncing for a file matched by a bundled default", (t) => {
+test("a repo .gitattributes can re-enable syncing for a file matched by a bundled default", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(dir, ".gitattributes", "data.json sync-header-metadata\n");
     writeFile(
@@ -313,9 +313,9 @@ test("a repo .gitattributes can re-enable syncing for a file matched by a bundle
     );
 });
 
-test("a nested .gitattributes can re-enable syncing for a subtree excluded by its parent", (t) => {
+test("a nested .gitattributes can re-enable syncing for a subtree excluded by its parent", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(dir, ".gitattributes", "vendor/** -sync-header-metadata\n");
     writeFile(
@@ -353,9 +353,9 @@ test("a nested .gitattributes can re-enable syncing for a subtree excluded by it
 // Annotations
 // -------------
 
-test("annotation input off (the default) prints no workflow-command lines at all", (t) => {
+test("annotation input off (the default) prints no workflow-command lines at all", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -369,9 +369,9 @@ test("annotation input off (the default) prints no workflow-command lines at all
     assert.doesNotMatch(result.stdout, /::(error|warning|notice)\b/);
 });
 
-test("annotation mode emits a well-formed ::error:: with file and line for a drifted repo line", (t) => {
+test("annotation mode emits a well-formed ::error:: with file and line for a drifted repo line", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -391,9 +391,9 @@ test("annotation mode emits a well-formed ::error:: with file and line for a dri
     );
 });
 
-test("annotation mode emits a well-formed ::error:: with file and line for a drifted path line", (t) => {
+test("annotation mode emits a well-formed ::error:: with file and line for a drifted path line", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -413,9 +413,9 @@ test("annotation mode emits a well-formed ::error:: with file and line for a dri
     );
 });
 
-test("annotation mode emits a well-formed ::notice:: with file and line when update mode rewrites a line", (t) => {
+test("annotation mode emits a well-formed ::notice:: with file and line when update mode rewrites a line", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -435,9 +435,9 @@ test("annotation mode emits a well-formed ::notice:: with file and line when upd
     );
 });
 
-test("a missing header emits ::warning:: (not ::error::) and does not fail verification", (t) => {
+test("a missing header emits ::warning:: (not ::error::) and does not fail verification", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(dir, "plain.txt", "just some text\nwith no markers at all\n");
     gitAdd(dir);
@@ -486,9 +486,9 @@ for (const url of [
     "https://github.com/owner/repo",
     "ssh://git@github.com/owner/repo.git",
 ]) {
-    test(`cli derives the repository from an origin remote of ${url}`, (t) => {
+    test(`cli derives the repository from an origin remote of ${url}`, () => {
         const dir = makeRepo();
-        t.after(() => cleanup(dir));
+        onTestFinished(() => cleanup(dir));
 
         setOrigin(dir, url);
         writeFile(
@@ -503,9 +503,9 @@ for (const url of [
     });
 }
 
-test("cli --repo overrides the origin remote", (t) => {
+test("cli --repo overrides the origin remote", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     setOrigin(dir, "git@github.com:someone/else.git");
     writeFile(
@@ -519,9 +519,9 @@ test("cli --repo overrides the origin remote", (t) => {
     assert.equal(runCli(dir, ["--repo", "owner/repo"]).status, 0);
 });
 
-test("cli --mode update rewrites drifted header lines", (t) => {
+test("cli --mode update rewrites drifted header lines", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -539,9 +539,9 @@ test("cli --mode update rewrites drifted header lines", (t) => {
 });
 
 for (const flag of ["--update", "-u"]) {
-    test(`cli ${flag} is shorthand for --mode update`, (t) => {
+    test(`cli ${flag} is shorthand for --mode update`, () => {
         const dir = makeRepo();
-        t.after(() => cleanup(dir));
+        onTestFinished(() => cleanup(dir));
 
         writeFile(
             dir,
@@ -559,9 +559,9 @@ for (const flag of ["--update", "-u"]) {
     });
 }
 
-test("cli --update agrees with an explicit --mode update", (t) => {
+test("cli --update agrees with an explicit --mode update", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     const result = runCli(dir, [
         "--repo",
@@ -573,9 +573,9 @@ test("cli --update agrees with an explicit --mode update", (t) => {
     assert.equal(result.status, 0);
 });
 
-test("cli rejects --update combined with --mode verify, and writes nothing", (t) => {
+test("cli rejects --update combined with --mode verify, and writes nothing", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     const original = header({ repo: "wrong/repo", filepath: "/foo.js" });
     writeFile(dir, "foo.js", original);
@@ -593,9 +593,9 @@ test("cli rejects --update combined with --mode verify, and writes nothing", (t)
     assert.equal(readFile(dir, "foo.js"), original);
 });
 
-test("cli verify fails on drift and prints no workflow-command lines", (t) => {
+test("cli verify fails on drift and prints no workflow-command lines", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -610,9 +610,9 @@ test("cli verify fails on drift and prints no workflow-command lines", (t) => {
     assert.doesNotMatch(result.stdout, /::(error|warning|notice)\b/);
 });
 
-test("cli fails clearly, without workflow commands, when no repository can be resolved", (t) => {
+test("cli fails clearly, without workflow commands, when no repository can be resolved", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     writeFile(
         dir,
@@ -627,9 +627,9 @@ test("cli fails clearly, without workflow commands, when no repository can be re
     assert.doesNotMatch(result.stdout, /::error/);
 });
 
-test("cli rejects an invalid --mode", (t) => {
+test("cli rejects an invalid --mode", () => {
     const dir = makeRepo();
-    t.after(() => cleanup(dir));
+    onTestFinished(() => cleanup(dir));
 
     const result = runCli(dir, ["--repo", "owner/repo", "--mode", "bogus"]);
     assert.equal(result.status, 1);
