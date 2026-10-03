@@ -17,7 +17,7 @@
 # These cover files that structurally can't carry a header comment, or are
 # generated/lockfiles that shouldn't be hand-edited.
 
-/LICENSE*                           -sync-header-metadata
+LICENSE*                           -sync-header-metadata
 /.github/pull_request_template.md   -sync-header-metadata
 .keep                               -sync-header-metadata
 *.json                              -sync-header-metadata
