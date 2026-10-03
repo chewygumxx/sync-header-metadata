@@ -43,6 +43,36 @@ const UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 // Same heuristic as git's own binary detection: a NUL byte near the start.
 const BINARY_SNIFF_BYTES = 8000;
 
+// Markers are only recognised in a file's header: its first HEADER_LINES
+// lines, read from at most its first HEADER_BYTES. Body text is never
+// mistaken for a marker, and a large file is never read in full unless its
+// header needs rewriting (the rest of its bytes are then copied verbatim).
+const HEADER_LINES = 32;
+const HEADER_BYTES = 64 * 1024;
+
+// Byte offset just past the header's last complete line. A line cut short
+// by the HEADER_BYTES read is dropped, unless the read reached EOF.
+function headerEnd(buf, eof) {
+    let end = 0;
+    for (let i = 0; i < HEADER_LINES && end < buf.length; i++) {
+        const nl = buf.indexOf(0x0a, end);
+        if (nl === -1) return eof ? buf.length : end;
+        end = nl + 1;
+    }
+    return end;
+}
+
+function readHead(filePath, size) {
+    const buf = Buffer.alloc(Math.min(size, HEADER_BYTES));
+    const fd = fs.openSync(filePath, "r");
+    try {
+        const n = fs.readSync(fd, buf, 0, buf.length, 0);
+        return { buf: buf.subarray(0, n), eof: n === size };
+    } finally {
+        fs.closeSync(fd);
+    }
+}
+
 // ------------------------------
 // Helpers: Resolve Header Lines
 // ------------------------------
@@ -213,7 +243,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         // The index can say "regular file" while the working tree holds a
         // symlink (or sits beneath one), so refuse anything that doesn't
         // resolve to exactly this path inside the repository.
-        let bytes;
+        let head;
         try {
             const stat = fs.lstatSync(filePath);
             if (
@@ -228,7 +258,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 unreadable++;
                 continue;
             }
-            bytes = fs.readFileSync(filePath);
+            head = readHead(filePath, stat.size);
         } catch (err) {
             log.warn({
                 file: relpath,
@@ -245,14 +275,15 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
             unreadable++;
             continue;
         }
-        if (bytes.subarray(0, BINARY_SNIFF_BYTES).includes(0)) {
+        if (head.buf.subarray(0, BINARY_SNIFF_BYTES).includes(0)) {
             log.info(`Skipped, binary: ${repoPath}`);
             skipped++;
             continue;
         }
+        const end = headerEnd(head.buf, head.eof);
         let content;
         try {
-            content = UTF8.decode(bytes);
+            content = UTF8.decode(head.buf.subarray(0, end));
         } catch {
             log.warn({
                 file: relpath,
@@ -338,9 +369,16 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
 
         // Write
         if (changed) {
+            const whole = head.eof ? head.buf : fs.readFileSync(filePath);
+            const rewritten = parts
+                .map((p, i) => (i % 2 ? p : lines[i / 2]))
+                .join("");
             fs.writeFileSync(
                 filePath,
-                parts.map((p, i) => (i % 2 ? p : lines[i / 2])).join(""),
+                Buffer.concat([
+                    Buffer.from(rewritten, "utf8"),
+                    whole.subarray(end),
+                ]),
             );
         }
     }

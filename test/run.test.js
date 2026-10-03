@@ -862,3 +862,47 @@ test("update mode rewrites only the marker line of a mixed-EOL file", () => {
         original.replace("~wrong/repo.git", "~owner/repo.git"),
     );
 });
+
+test("marker-like text past the header is never treated as a marker", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    const original = `${"filler\n".repeat(40)}see the mirror ~bob/proj.git\n`;
+    writeFile(dir, "notes.txt", original);
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(result.status, 0, result.stdout);
+    assert.match(result.stdout, /Repo line not found/);
+    assert.equal(readFile(dir, "notes.txt"), original);
+});
+
+test("update mode rewrites the header of a large file and copies the rest verbatim", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    // A >64 KiB body, ending in Latin-1 bytes that aren't valid UTF-8:
+    // only the header is decoded, so the body must round-trip untouched.
+    const body = Buffer.concat([
+        Buffer.from("x".repeat(100 * 1024)),
+        Buffer.from([0x0a, 0x63, 0x61, 0x66, 0xe9, 0x0a]),
+    ]);
+    fs.writeFileSync(
+        path.join(dir, "big.txt"),
+        Buffer.concat([
+            Buffer.from(header({ repo: "wrong/repo", filepath: "/big.txt" })),
+            body,
+        ]),
+    );
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(result.status, 0, result.stdout);
+    assert.deepEqual(
+        fs.readFileSync(path.join(dir, "big.txt")),
+        Buffer.concat([
+            Buffer.from(header({ repo: "owner/repo", filepath: "/big.txt" })),
+            body,
+        ]),
+    );
+});
