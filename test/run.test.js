@@ -670,3 +670,35 @@ test("tracked-file listings larger than the default 1 MiB maxBuffer are handled"
     const result = runAction(dir);
     assert.equal(result.status, 0, result.stdout + result.stderr);
 });
+
+test("the user's global core.attributesFile is honoured alongside the bundled defaults", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "sync-header-home-"));
+    onTestFinished(() => cleanup(home));
+    const globalAttributes = path.join(home, "attributes");
+    fs.writeFileSync(globalAttributes, "foo.js -sync-header-metadata\n");
+    const globalConfig = path.join(home, "gitconfig");
+    fs.writeFileSync(
+        globalConfig,
+        `[core]\n\tattributesFile = ${globalAttributes}\n`,
+    );
+
+    // Both drifted: foo.js is excluded by the user's global file, LICENSE
+    // by the bundled defaults.
+    writeFile(
+        dir,
+        "foo.js",
+        header({ repo: "wrong/repo", filepath: "/foo.js" }),
+    );
+    writeFile(
+        dir,
+        "LICENSE",
+        header({ repo: "wrong/repo", filepath: "/LICENSE" }),
+    );
+    gitAdd(dir);
+
+    const result = runAction(dir, { GIT_CONFIG_GLOBAL: globalConfig });
+    assert.equal(result.status, 0, result.stdout);
+});

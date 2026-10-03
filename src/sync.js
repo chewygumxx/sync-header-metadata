@@ -19,9 +19,9 @@ const { execFileSync } = require("node:child_process");
 //   /LICENSE -sync-header-metadata
 //
 // default.gitattributes ships a baseline exclusion list (LICENSE, lockfiles,
-// *.json, etc.) via `core.attributesFile`, which git consults only as a
-// last resort. Any matching line in the repo's own .gitattributes/
-// info/attributes always takes precedence over it.
+// *.json, etc.), consulted only for paths that no other attributes source
+// (the repo's .gitattributes/info/attributes, or the user's own
+// `core.attributesFile`) sets or unsets.
 const ATTR = "sync-header-metadata";
 const DEFAULT_ATTRIBUTES_FILE = path.join(
     __dirname,
@@ -103,14 +103,19 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
     }
     const allFiles = fileListRaw.split("\0").filter(Boolean);
 
-    let checkAttrRaw = "";
-    if (allFiles.length > 0) {
+    // `core.attributesFile` holds a single path, so pointing it at the
+    // bundled defaults would silently drop the user's own global attributes
+    // file. Instead, resolve with the user's configuration first, and fall
+    // back to the defaults only for paths nothing else has an opinion on.
+    const checkAttr = (paths, configArgs = []) => {
+        const values = new Map();
+        if (paths.length === 0) return values;
+        let raw;
         try {
-            checkAttrRaw = execFileSync(
+            raw = execFileSync(
                 "git",
                 [
-                    "-c",
-                    `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`,
+                    ...configArgs,
                     "-C",
                     repoRoot,
                     "check-attr",
@@ -119,7 +124,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                     ATTR,
                 ],
                 {
-                    input: allFiles.join("\0"),
+                    input: paths.join("\0"),
                     encoding: "utf8",
                     maxBuffer: GIT_MAX_BUFFER,
                 },
@@ -127,13 +132,20 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         } catch (err) {
             log.fatal(`Failed to resolve attributes: ${err.message}`);
         }
-    }
-    const attrParts = checkAttrRaw.split("\0");
-    attrParts.pop();
-    const ignored = new Set();
-    for (let i = 0; i < attrParts.length; i += 3) {
-        if (attrParts[i + 2] === "unset") ignored.add(attrParts[i]);
-    }
+        const parts = raw.split("\0");
+        parts.pop();
+        for (let i = 0; i < parts.length; i += 3)
+            values.set(parts[i], parts[i + 2]);
+        return values;
+    };
+    const attrs = checkAttr(allFiles);
+    const unspecified = allFiles.filter((f) => attrs.get(f) === "unspecified");
+    const defaults = checkAttr(unspecified, [
+        "-c",
+        `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`,
+    ]);
+    for (const [f, value] of defaults) attrs.set(f, value);
+    const ignored = new Set(allFiles.filter((f) => attrs.get(f) === "unset"));
     const files = allFiles.filter((f) => !ignored.has(f));
 
     if (files.length === 0) {
