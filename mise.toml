@@ -40,7 +40,8 @@ node = "24"
 #
 # Utilities
 #
-# `jq` parses the tool payload in `.claude/hooks/prohibit-em-dash.sh`.
+# `jq` parses hook payloads in the Claude Code plugins enabled in
+# `.claude/settings.json` (`prohibit-em-dash`, `repo-metadata`).
 #
 "aqua:jqlang/jq" = "1"
 
