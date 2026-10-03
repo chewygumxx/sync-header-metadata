@@ -94,9 +94,20 @@ function findRepoMarker(lines) {
 // and `user@host:~a/b.git` don't match), and the owner can't be empty (so
 // `cd ~/src/foo.git` doesn't either).
 const REPO_MARKER_RE = /(?<![\w/.~:@])~([^\s/]+\/\S+?)\.git\s*$/;
+// A drifted path is only recognised without whitespace, so a trailing
+// comment closer (`<!-- ::: :/x -->`) is never mistaken for part of it.
+// A path that does contain whitespace is still matched exactly, below.
 const PATH_MARKER_RE = / ::: :(\/\S*)\s*$/;
-function findPathMarker(lines) {
+function findPathMarker(lines, repoPath) {
+    const exact = ` ::: :${repoPath}`;
     for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trimEnd();
+        if (line.endsWith(exact))
+            return {
+                index: i,
+                splitAt: line.length - repoPath.length,
+                current: repoPath,
+            };
         const m = PATH_MARKER_RE.exec(lines[i]);
         if (m)
             return {
@@ -338,7 +349,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         }
 
         // Filepath
-        const pathMarker = findPathMarker(lines);
+        const pathMarker = findPathMarker(lines, repoPath);
         if (!pathMarker) {
             log.warn({
                 file: relpath,

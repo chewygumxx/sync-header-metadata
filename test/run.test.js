@@ -937,3 +937,27 @@ test("a repo marker directly after a comment leader is still recognised", () => 
     runAction(dir, { INPUT_MODE: "update" });
     assert.equal(readFile(dir, "foo.sh"), "#~owner/repo.git\n# ::: :/foo.sh\n");
 });
+
+test("a path containing whitespace is recognised once update mode has written it", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(
+        dir,
+        "docs/My Notes.md",
+        header({ repo: "owner/repo", filepath: "/docs/old.md" }),
+    );
+    gitAdd(dir);
+
+    const update = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(update.status, 0, update.stdout);
+    assert.match(
+        readFile(dir, "docs/My Notes.md"),
+        / ::: :\/docs\/My Notes\.md\n/,
+    );
+
+    const verify = runAction(dir, { INPUT_VERBOSE: "true" });
+    assert.equal(verify.status, 0, verify.stdout);
+    assert.match(verify.stdout, /Path line correct/);
+    assert.doesNotMatch(verify.stdout, /Path line not found/);
+});
