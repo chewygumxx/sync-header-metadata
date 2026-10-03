@@ -12,6 +12,10 @@
 # package.json's version. The floating major tag (`v2`) that the Action's
 # users pin is not matched, so moving it never republishes.
 #
+# release.yaml dispatches this on the tag it creates, since a tag pushed
+# with GITHUB_TOKEN triggers no `push` event. Dispatched on anything but a
+# `vX.Y.Z` tag, Verify Version fails.
+#
 # A staged version is not installable until it is approved on npmjs.com
 # with the maintainer's 2FA, so this workflow alone can never release.
 #
@@ -27,6 +31,7 @@ on:
     push:
         tags:
             - "v[0-9]+.[0-9]+.[0-9]+"
+    workflow_dispatch: {}
 
 permissions:
     contents: read
