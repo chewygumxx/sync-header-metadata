@@ -458,6 +458,26 @@ test("a missing header emits ::warning:: (not ::error::) and does not fail verif
     assert.doesNotMatch(result.stdout, /::error/);
 });
 
+for (const annotation of ["false", "true"]) {
+    test(`a newline in a tracked filename cannot inject a workflow command (annotation=${annotation})`, () => {
+        const dir = makeRepo();
+        onTestFinished(() => cleanup(dir));
+
+        // Only the repo line is present, so the file logs both an INFO line
+        // (with its path) and a "Path line not found" warning.
+        writeFile(dir, "evil\n::error::injected.txt", "// ~owner/repo.git\n");
+        gitAdd(dir);
+
+        const result = runAction(dir, {
+            INPUT_VERBOSE: "true",
+            INPUT_ANNOTATION: annotation,
+        });
+        assert.equal(result.status, 0);
+        assert.match(result.stdout, /evil\\n::error::injected\.txt/);
+        assert.doesNotMatch(result.stdout, /^::error::injected/m);
+    });
+}
+
 // -----
 // CLI
 // -----

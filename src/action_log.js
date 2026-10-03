@@ -21,6 +21,13 @@ function escapeProperty(value) {
     return escapeData(value).replace(/:/g, "%3A").replace(/,/g, "%2C");
 }
 
+// Plain log lines are scanned by the runner for `::command::` prefixes too,
+// so an embedded CR/LF in a value (a tracked filename, a CLI argument) could
+// otherwise start a new line and smuggle in a workflow command.
+function oneLine(value) {
+    return String(value).replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+}
+
 function output(level, message) {
     const output = typeof message === "string" ? message : message.join("\n");
     console.log(`[${level.toUpperCase()}] ${output}`);
@@ -51,7 +58,7 @@ function annotate(command, opts) {
 function wrap(command, opts, annotation_enabled) {
     output(
         command,
-        `${opts.title}: ${opts.message}${opts.file ? ` ${opts.file}` : ""}`,
+        `${oneLine(opts.title)}: ${opts.message}${opts.file ? ` ${oneLine(opts.file)}` : ""}`,
     );
     if (annotation_enabled) annotate(command, opts);
 }
@@ -64,7 +71,7 @@ class ActionLog {
 
     info(message) {
         if (!this.verbose) return;
-        output("info", message);
+        output("info", oneLine(message));
     }
     notice(opts) {
         wrap("notice", opts, this.annotation);
@@ -76,7 +83,7 @@ class ActionLog {
         wrap("error", opts, this.annotation);
     }
     fatal(message, code = 1) {
-        output("fatal", message);
+        output("fatal", oneLine(message));
         if (this.annotation)
             annotate("error", {
                 title: `[FATAL] ${message}`,
