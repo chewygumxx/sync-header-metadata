@@ -280,6 +280,20 @@ bun bin/sync-header-metadata.js --verbose   # run the CLI against this repo
 bun run test                                # both entry points, in throwaway repos
 ```
 
+### Releasing
+
+Releases are cut by [release-please](https://github.com/googleapis/release-please)
+from the conventional commits on `main` (`feat` is a minor bump; `fix`,
+`tweak` and `perf` are patches). It keeps a `chore: Release vX.Y.Z` pull
+request open; merging it:
+
+1. Bumps `package.json`, tags `vX.Y.Z` and creates the GitHub Release.
+2. Moves the floating major tag (e.g. `v2`) to the new release.
+3. Stages the npm package, which goes live once approved on npmjs.com.
+
+See [`release.yaml`](.github/workflows/release.yaml) and
+[`publish.yaml`](.github/workflows/publish.yaml).
+
 ## License
 
 [GNU General Public License v3.0 only](LICENSE)
