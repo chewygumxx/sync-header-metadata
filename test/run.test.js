@@ -797,3 +797,53 @@ test("submodules and skip-worktree paths are skipped without warnings", () => {
     assert.equal(result.status, 0, result.stdout);
     assert.doesNotMatch(result.stdout, /\[WARN\]/);
 });
+
+test("update mode leaves a non-UTF-8 file byte-for-byte intact and warns", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    // Latin-1 "café": 0xE9 alone is not valid UTF-8.
+    const original = Buffer.concat([
+        Buffer.from(header({ repo: "wrong/repo", filepath: "/foo.txt" })),
+        Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a]),
+    ]);
+    fs.writeFileSync(path.join(dir, "foo.txt"), original);
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(result.status, 0, result.stdout);
+    assert.match(result.stdout, /Not valid UTF-8/);
+    assert.deepEqual(fs.readFileSync(path.join(dir, "foo.txt")), original);
+});
+
+test("binary files are skipped without header warnings", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    fs.writeFileSync(
+        path.join(dir, "image.png"),
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
+    );
+    gitAdd(dir);
+
+    const result = runAction(dir);
+    assert.equal(result.status, 0, result.stdout);
+    assert.doesNotMatch(result.stdout, /\[WARN\]/);
+});
+
+test("a UTF-8 byte order mark survives an update rewrite", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(
+        dir,
+        "foo.js",
+        `\uFEFF${header({ repo: "wrong/repo", filepath: "/foo.js" })}`,
+    );
+    gitAdd(dir);
+
+    runAction(dir, { INPUT_MODE: "update" });
+    const content = readFile(dir, "foo.js");
+    assert.ok(content.startsWith("\uFEFF"), "expected the BOM to be kept");
+    assert.match(content, /~owner\/repo\.git/);
+});

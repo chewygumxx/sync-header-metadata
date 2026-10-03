@@ -34,6 +34,15 @@ const DEFAULT_ATTRIBUTES_FILE = path.join(
 // of tracked files, so a large monorepo would otherwise crash outright.
 const GIT_MAX_BUFFER = Infinity;
 
+// `readFileSync(..., "utf8")` never throws on malformed input: it silently
+// substitutes U+FFFD, which update mode would then write back to disk. A
+// fatal decoder rejects such files instead. `ignoreBOM` keeps a leading BOM
+// in the decoded text, so it survives a rewrite.
+const UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+
+// Same heuristic as git's own binary detection: a NUL byte near the start.
+const BINARY_SNIFF_BYTES = 8000;
+
 // ------------------------------
 // Helpers: Resolve Header Lines
 // ------------------------------
@@ -204,7 +213,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         // The index can say "regular file" while the working tree holds a
         // symlink (or sits beneath one), so refuse anything that doesn't
         // resolve to exactly this path inside the repository.
-        let content;
+        let bytes;
         try {
             const stat = fs.lstatSync(filePath);
             if (
@@ -219,8 +228,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
                 unreadable++;
                 continue;
             }
-            content = fs.readFileSync(filePath, "utf8");
-            parsed++;
+            bytes = fs.readFileSync(filePath);
         } catch (err) {
             log.warn({
                 file: relpath,
@@ -237,6 +245,24 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
             unreadable++;
             continue;
         }
+        if (bytes.subarray(0, BINARY_SNIFF_BYTES).includes(0)) {
+            log.info(`Skipped, binary: ${repoPath}`);
+            skipped++;
+            continue;
+        }
+        let content;
+        try {
+            content = UTF8.decode(bytes);
+        } catch {
+            log.warn({
+                file: relpath,
+                title: "Not valid UTF-8",
+                message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\``,
+            });
+            unreadable++;
+            continue;
+        }
+        parsed++;
         const eol = content.includes("\r\n") ? "\r\n" : "\n";
         const lines = content.split(/\r\n|\n/);
 
