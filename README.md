@@ -165,14 +165,15 @@ carry a header comment, or are generated/lockfiles that shouldn't be
 hand-edited:
 
 ```gitattributes
-/LICENSE*        -sync-header-metadata
-.keep            -sync-header-metadata
-*.json           -sync-header-metadata
-*.lock           -sync-header-metadata
-pnpm-lock.yaml   -sync-header-metadata
-go.sum           -sync-header-metadata
-*.min.js         -sync-header-metadata
-*.min.css        -sync-header-metadata
+LICENSE*                           -sync-header-metadata
+/.github/pull_request_template.md  -sync-header-metadata
+.keep                              -sync-header-metadata
+*.json                             -sync-header-metadata
+*.lock                             -sync-header-metadata
+pnpm-lock.yaml                     -sync-header-metadata
+go.sum                             -sync-header-metadata
+*.min.js                           -sync-header-metadata
+*.min.css                          -sync-header-metadata
 ```
 
 These are loaded at the lowest precedence, so they never need to be declared
