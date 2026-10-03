@@ -90,7 +90,10 @@ function findRepoMarker(lines) {
     return null;
 }
 
-const REPO_MARKER_RE = /~(\S+\/\S+?)\.git\s*$/;
+// The `~` must not follow a URL or path character (so `https://host/~a/b.git`
+// and `user@host:~a/b.git` don't match), and the owner can't be empty (so
+// `cd ~/src/foo.git` doesn't either).
+const REPO_MARKER_RE = /(?<![\w/.~:@])~([^\s/]+\/\S+?)\.git\s*$/;
 const PATH_MARKER_RE = / ::: :(\/\S*)\s*$/;
 function findPathMarker(lines) {
     for (let i = 0; i < lines.length; i++) {

@@ -906,3 +906,34 @@ test("update mode rewrites the header of a large file and copies the rest verbat
         ]),
     );
 });
+
+for (const line of [
+    "# clone: https://git.sr.ht/~bob/proj.git",
+    "# mirror: git@git.sr.ht:~bob/proj.git",
+    "# cd ~/src/foo.git",
+]) {
+    test(`a header line like '${line}' is not mistaken for the repo marker`, () => {
+        const dir = makeRepo();
+        onTestFinished(() => cleanup(dir));
+
+        const original = `${line}\n`;
+        writeFile(dir, "notes.txt", original);
+        gitAdd(dir);
+
+        const result = runAction(dir, { INPUT_MODE: "update" });
+        assert.equal(result.status, 0, result.stdout);
+        assert.match(result.stdout, /Repo line not found/);
+        assert.equal(readFile(dir, "notes.txt"), original);
+    });
+}
+
+test("a repo marker directly after a comment leader is still recognised", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(dir, "foo.sh", "#~wrong/repo.git\n# ::: :/foo.sh\n");
+    gitAdd(dir);
+
+    runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(readFile(dir, "foo.sh"), "#~owner/repo.git\n# ::: :/foo.sh\n");
+});
