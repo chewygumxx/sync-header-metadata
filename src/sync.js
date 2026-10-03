@@ -92,16 +92,42 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         log.fatal("Not inside a git repository");
     }
 
+    // `-t --stage` yields "<tag> <mode> <object> <stage>\t<path>" per entry.
+    // Only regular files can carry a header: a symlink (120000) would be
+    // followed outside the index's view of the tree (or the repo entirely),
+    // and a submodule (160000) is a directory. Skip-worktree entries (tag
+    // "S", e.g. sparse checkout) are intentionally absent on disk.
     let fileListRaw;
     try {
-        fileListRaw = execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], {
-            encoding: "utf8",
-            maxBuffer: GIT_MAX_BUFFER,
-        });
+        fileListRaw = execFileSync(
+            "git",
+            ["-C", repoRoot, "ls-files", "-z", "-t", "--stage"],
+            { encoding: "utf8", maxBuffer: GIT_MAX_BUFFER },
+        );
     } catch (err) {
         log.fatal(`Failed to list tracked files: ${err.message}`);
     }
-    const allFiles = fileListRaw.split("\0").filter(Boolean);
+    const allFiles = [];
+    const seen = new Set();
+    let skipped = 0;
+    for (const entry of fileListRaw.split("\0")) {
+        const tab = entry.indexOf("\t");
+        if (tab === -1) continue;
+        const [tag, mode] = entry.slice(0, tab).split(" ");
+        const relpath = entry.slice(tab + 1);
+        // Unmerged paths are listed once per conflict stage.
+        if (seen.has(relpath)) continue;
+        seen.add(relpath);
+        if (tag === "S") {
+            log.info(`Skipped, not checked out: /${relpath}`);
+            skipped++;
+        } else if (mode !== "100644" && mode !== "100755") {
+            log.info(`Skipped, not a regular file: /${relpath}`);
+            skipped++;
+        } else {
+            allFiles.push(relpath);
+        }
+    }
 
     // `core.attributesFile` holds a single path, so pointing it at the
     // bundled defaults would silently drop the user's own global attributes
@@ -160,6 +186,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
     // Parse Files
     // ------------
 
+    const realRoot = fs.realpathSync(repoRoot);
     let parsed = 0,
         unreadable = 0;
     let repoUpdated = 0,
@@ -174,15 +201,38 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         const repoPath = `/${relpath}`;
 
         // Read
+        // The index can say "regular file" while the working tree holds a
+        // symlink (or sits beneath one), so refuse anything that doesn't
+        // resolve to exactly this path inside the repository.
         let content;
         try {
+            const stat = fs.lstatSync(filePath);
+            if (
+                !stat.isFile() ||
+                fs.realpathSync(filePath) !== path.join(realRoot, relpath)
+            ) {
+                log.warn({
+                    file: relpath,
+                    title: "Not a regular file",
+                    message: "Replaced on disk by a symlink or directory",
+                });
+                unreadable++;
+                continue;
+            }
             content = fs.readFileSync(filePath, "utf8");
             parsed++;
-        } catch {
+        } catch (err) {
             log.warn({
                 file: relpath,
-                title: "Failed to read file as utf8 encoded",
-                message: `Consider ignoring with .gitattributes: \`${repoPath} -${ATTR}\` `,
+                ...(err.code === "ENOENT"
+                    ? {
+                          title: "File missing from working tree",
+                          message: "Tracked in the index but deleted on disk",
+                      }
+                    : {
+                          title: "Failed to read file",
+                          message: err.message,
+                      }),
             });
             unreadable++;
             continue;
@@ -271,7 +321,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
         `    Files parsed: ${parsed}\n` +
         `    Repo line - ${verify ? "Out-of-Sync" : "Updated"}: ${repoUpdated}, Correct: ${repoCorrect}, Not found: ${repoNotFound}\n` +
         `    Path line - ${verify ? "Out-of-Sync" : "Updated"}: ${pathUpdated}, Correct: ${pathCorrect}, Not found: ${pathNotFound}\n` +
-        `    Files unreadable: ${unreadable}`;
+        `    Files unreadable: ${unreadable}, Skipped: ${skipped}`;
 
     let sumTitle;
     if (verify) {

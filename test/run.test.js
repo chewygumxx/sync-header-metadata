@@ -702,3 +702,98 @@ test("the user's global core.attributesFile is honoured alongside the bundled de
     const result = runAction(dir, { GIT_CONFIG_GLOBAL: globalConfig });
     assert.equal(result.status, 0, result.stdout);
 });
+
+test("update mode does not follow a tracked symlink into its target", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    const original = header({ repo: "owner/repo", filepath: "/foo.js" });
+    writeFile(dir, "foo.js", original);
+    fs.symlinkSync("foo.js", path.join(dir, "link.js"));
+    gitAdd(dir);
+
+    const result = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(result.status, 0, result.stdout);
+    assert.equal(readFile(dir, "foo.js"), original);
+    assert.doesNotMatch(result.stdout, /link\.js/);
+});
+
+test("update mode does not write through a working-tree symlink to outside the repo", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), "sync-outside-"));
+    onTestFinished(() => cleanup(outside));
+
+    const victim = header({ repo: "victim/repo", filepath: "/secret.js" });
+    fs.writeFileSync(path.join(outside, "secret.js"), victim);
+    writeFile(
+        dir,
+        "foo.js",
+        header({ repo: "owner/repo", filepath: "/foo.js" }),
+    );
+    gitAdd(dir);
+    // The index still records a regular file; only the working tree changed.
+    fs.rmSync(path.join(dir, "foo.js"));
+    fs.symlinkSync(path.join(outside, "secret.js"), path.join(dir, "foo.js"));
+
+    const result = runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(result.status, 0, result.stdout);
+    assert.match(result.stdout, /Not a regular file/);
+    assert.equal(
+        fs.readFileSync(path.join(outside, "secret.js"), "utf8"),
+        victim,
+    );
+});
+
+test("a tracked file deleted from the working tree is reported as missing, not as an encoding problem", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(
+        dir,
+        "gone.js",
+        header({ repo: "owner/repo", filepath: "/gone.js" }),
+    );
+    gitAdd(dir);
+    fs.rmSync(path.join(dir, "gone.js"));
+
+    const result = runAction(dir);
+    assert.equal(result.status, 0, result.stdout);
+    assert.match(result.stdout, /File missing from working tree/);
+    assert.doesNotMatch(result.stdout, /utf8|UTF-8/);
+});
+
+test("submodules and skip-worktree paths are skipped without warnings", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(
+        dir,
+        "foo.js",
+        header({ repo: "owner/repo", filepath: "/foo.js" }),
+    );
+    writeFile(
+        dir,
+        "sparse.js",
+        header({ repo: "owner/repo", filepath: "/sparse.js" }),
+    );
+    gitAdd(dir);
+    execFileSync(
+        "git",
+        [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            `160000,${"1".repeat(40)},sub`,
+        ],
+        { cwd: dir },
+    );
+    execFileSync("git", ["update-index", "--skip-worktree", "sparse.js"], {
+        cwd: dir,
+    });
+    fs.rmSync(path.join(dir, "sparse.js"));
+
+    const result = runAction(dir);
+    assert.equal(result.status, 0, result.stdout);
+    assert.doesNotMatch(result.stdout, /\[WARN\]/);
+});
