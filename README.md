@@ -50,6 +50,17 @@ matches the multi-line comment-block style shown above (marker on its own
 line, closer on a separate line), but not a single-line closed comment like
 `<!-- ~owner/repo.git -->` or `/* ~owner/repo.git */`.
 
+Markers are only looked for in a file's header: its first 32 lines (within
+its first 64 KiB). A file's body is never searched, decoded, or rewritten,
+so a URL like `https://git.sr.ht/~owner/repo.git` further down is left alone.
+Within the header, a `~` that follows a URL or path character (`/`, `:`,
+`@`, et cetera) is not taken as the repo marker either.
+
+A path line containing whitespace (e.g. `::: :/docs/My Notes.md`) is
+recognised when it matches the file's actual path exactly. If such a file
+is moved, its stale path line is reported as not found rather than
+rewritten, since its end can't be told apart from a trailing comment closer.
+
 ## Usage
 
 To verify without rewrite, failing on drift.
@@ -123,12 +134,21 @@ Only files in git's index are checked (`git ls-files`), exactly as in CI. A
 new file isn't checked until it's been `git add`ed; untracked files are
 skipped without warning.
 
-To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook
-(staged files are in the index, so they're covered):
+Only regular files on disk are read. Symlinks, submodules, skip-worktree
+(e.g. sparse checkout) paths, and binary files are skipped. A tracked file
+that has been deleted, or replaced by a symlink, is reported and skipped,
+and a header that isn't valid UTF-8 is reported rather than rewritten.
+
+To catch drift before it reaches CI, e.g. as a husky `pre-commit` hook:
 
 ```sh
 bunx sync-header-metadata@2
 ```
+
+The paths come from the index, but their content is read from the working
+tree, so a partially staged file is checked as it is on disk, not as it
+will be committed. Stage a file's header changes whole (or stash unstaged
+changes with `git stash --keep-index` first) for the hook to be exact.
 
 ### Exit codes
 
@@ -177,9 +197,10 @@ go.sum                             -sync-header-metadata
 ```
 
 These are loaded at the lowest precedence, so they never need to be declared
-in your own `.gitattributes`. Any matching line in your repo (set or
-unset) always overrides a default, e.g. to re-enable syncing for one JSON
-file despite the blanket `*.json` default:
+in your own `.gitattributes`. Any matching line in your repo, or in your
+own global `core.attributesFile` (set or unset), always overrides a
+default, e.g. to re-enable syncing for one JSON file despite the blanket
+`*.json` default:
 
 ```gitattributes
 config/version.json sync-header-metadata
