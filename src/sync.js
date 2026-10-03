@@ -29,6 +29,11 @@ const DEFAULT_ATTRIBUTES_FILE = path.join(
     "default.gitattributes",
 );
 
+// execFileSync buffers all of stdout and throws ENOBUFS past `maxBuffer`
+// (1 MiB by default); `ls-files`/`check-attr` output grows with the number
+// of tracked files, so a large monorepo would otherwise crash outright.
+const GIT_MAX_BUFFER = Infinity;
+
 // ------------------------------
 // Helpers: Resolve Header Lines
 // ------------------------------
@@ -91,6 +96,7 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
     try {
         fileListRaw = execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], {
             encoding: "utf8",
+            maxBuffer: GIT_MAX_BUFFER,
         });
     } catch (err) {
         log.fatal(`Failed to list tracked files: ${err.message}`);
@@ -99,20 +105,28 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
 
     let checkAttrRaw = "";
     if (allFiles.length > 0) {
-        checkAttrRaw = execFileSync(
-            "git",
-            [
-                "-c",
-                `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`,
-                "-C",
-                repoRoot,
-                "check-attr",
-                "-z",
-                "--stdin",
-                ATTR,
-            ],
-            { input: allFiles.join("\0"), encoding: "utf8" },
-        );
+        try {
+            checkAttrRaw = execFileSync(
+                "git",
+                [
+                    "-c",
+                    `core.attributesFile=${DEFAULT_ATTRIBUTES_FILE}`,
+                    "-C",
+                    repoRoot,
+                    "check-attr",
+                    "-z",
+                    "--stdin",
+                    ATTR,
+                ],
+                {
+                    input: allFiles.join("\0"),
+                    encoding: "utf8",
+                    maxBuffer: GIT_MAX_BUFFER,
+                },
+            );
+        } catch (err) {
+            log.fatal(`Failed to resolve attributes: ${err.message}`);
+        }
     }
     const attrParts = checkAttrRaw.split("\0");
     attrParts.pop();

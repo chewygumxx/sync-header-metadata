@@ -655,3 +655,18 @@ test("cli rejects an invalid --mode", () => {
     assert.equal(result.status, 1);
     assert.match(result.stdout, /Invalid mode/);
 });
+
+test("tracked-file listings larger than the default 1 MiB maxBuffer are handled", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    // ~4500 x ~240-byte paths puts both `ls-files` and `check-attr` output
+    // past execFileSync's default 1 MiB buffer.
+    const stem = "a".repeat(230);
+    for (let i = 0; i < 4500; i++)
+        fs.writeFileSync(path.join(dir, `${stem}${i}.json`), "");
+    gitAdd(dir);
+
+    const result = runAction(dir);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+});
