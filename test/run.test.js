@@ -961,3 +961,26 @@ test("a path containing whitespace is recognised once update mode has written it
     assert.match(verify.stdout, /Path line correct/);
     assert.doesNotMatch(verify.stdout, /Path line not found/);
 });
+
+test("the summary title is printed once, with the counts on their own lines", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    writeFile(
+        dir,
+        "foo.js",
+        header({ repo: "wrong/repo", filepath: "/foo.js" }),
+    );
+    gitAdd(dir);
+
+    const result = runAction(dir);
+    assert.equal(result.status, 1);
+    assert.match(
+        result.stdout,
+        /^\[ERROR\] Verification Failed:\n {4}Files parsed: 1$/m,
+    );
+    assert.doesNotMatch(
+        result.stdout,
+        /Verification Failed: Verification Failed/,
+    );
+});

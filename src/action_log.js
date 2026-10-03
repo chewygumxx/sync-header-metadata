@@ -56,10 +56,11 @@ function annotate(command, opts) {
 }
 
 function wrap(command, opts, annotation_enabled) {
-    output(
-        command,
-        `${oneLine(opts.title)}: ${opts.message}${opts.file ? ` ${oneLine(opts.file)}` : ""}`,
-    );
+    // A multi-line message (e.g. the run summary) starts on its own line.
+    const sep = opts.message.includes("\n") ? "\n" : " ";
+    const message = opts.message ? `${sep}${opts.message}` : "";
+    const file = opts.file ? ` ${oneLine(opts.file)}` : "";
+    output(command, `${oneLine(opts.title)}:${message}${file}`);
     if (annotation_enabled) annotate(command, opts);
 }
 

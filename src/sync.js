@@ -411,14 +411,14 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
     if (verify) {
         if (repoUpdated > 0 || pathUpdated > 0) {
             sumTitle = "Verification Failed";
-            log.error({ title: sumTitle, message: `${sumTitle}:\n${summary}` });
+            log.error({ title: sumTitle, message: summary });
             return 1;
         }
         sumTitle = "Verification Passed";
     } else {
         sumTitle = "Update Complete";
     }
-    log.notice({ title: sumTitle, message: `${sumTitle}:\n${summary}` });
+    log.notice({ title: sumTitle, message: summary });
     return 0;
 }
 
