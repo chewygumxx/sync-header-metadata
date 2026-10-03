@@ -847,3 +847,18 @@ test("a UTF-8 byte order mark survives an update rewrite", () => {
     assert.ok(content.startsWith("\uFEFF"), "expected the BOM to be kept");
     assert.match(content, /~owner\/repo\.git/);
 });
+
+test("update mode rewrites only the marker line of a mixed-EOL file", () => {
+    const dir = makeRepo();
+    onTestFinished(() => cleanup(dir));
+
+    const original = `${header({ repo: "wrong/repo", filepath: "/foo.js" })}windows();\r\nunix();\n`;
+    writeFile(dir, "foo.js", original);
+    gitAdd(dir);
+
+    runAction(dir, { INPUT_MODE: "update" });
+    assert.equal(
+        readFile(dir, "foo.js"),
+        original.replace("~wrong/repo.git", "~owner/repo.git"),
+    );
+});

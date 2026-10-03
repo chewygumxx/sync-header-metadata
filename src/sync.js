@@ -263,8 +263,11 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
             continue;
         }
         parsed++;
-        const eol = content.includes("\r\n") ? "\r\n" : "\n";
-        const lines = content.split(/\r\n|\n/);
+        // Keep each line's own terminator (odd indices of `parts`), so a
+        // rewrite touches only the marker line and never normalises the
+        // line endings of a mixed-EOL file.
+        const parts = content.split(/(\r?\n)/);
+        const lines = parts.filter((_, i) => i % 2 === 0);
 
         // Repository
         let changed = false;
@@ -335,7 +338,10 @@ function sync({ mode, repository, log, cwd = process.cwd() }) {
 
         // Write
         if (changed) {
-            fs.writeFileSync(filePath, lines.join(eol));
+            fs.writeFileSync(
+                filePath,
+                parts.map((p, i) => (i % 2 ? p : lines[i / 2])).join(""),
+            );
         }
     }
 
